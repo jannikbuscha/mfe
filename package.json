@@ -3,7 +3,20 @@
   "version": "0.0.0",
   "license": "MIT",
   "private": true,
-  "scripts": {},
+  "scripts": {
+    "start": "nx run-many -t serve -p shell,mf1,mf2",
+    "start:shell": "nx serve shell",
+    "start:mf1": "nx serve mf1",
+    "start:mf2": "nx serve mf2",
+    "build": "nx run-many -t build",
+    "test": "nx run-many -t test",
+    "lint": "nx run-many -t lint",
+    "e2e": "nx e2e shell-e2e",
+    "graph": "nx graph"
+  },
+  "engines": {
+    "node": ">=24.16.0"
+  },
   "devDependencies": {
     "@analogjs/vite-plugin-angular": "~2.7.3",
     "@analogjs/vitest-angular": "~2.7.3",
