@@ -1,0 +1,6 @@
+@if (lastSelected(); as product) {
+  <p class="last-selected" data-testid="last-selected">
+    Zuletzt angesehen: <strong>{{ product.name }}</strong>
+  </p>
+}
+<mf2-cart-view compact />

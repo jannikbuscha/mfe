@@ -1,0 +1,14 @@
+<ui-panel
+  data-testid="event-monitor"
+  heading="Event-Monitor"
+  caption="window.__NF_REGISTRY__ · neueste zuerst"
+  accent="shell"
+>
+  <span uiPanelActions class="count" title="Angezeigte Events / Maximum">
+    {{ entries().length }} / {{ limit }}
+  </span>
+  <ui-event-log
+    [entries]="entries()"
+    emptyText="Noch keine Events. Lege im Katalog ein Produkt in den Warenkorb."
+  />
+</ui-panel>

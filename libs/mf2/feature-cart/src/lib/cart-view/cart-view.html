@@ -1,0 +1,97 @@
+@if (cart.items().length) {
+  <ul class="lines">
+    @for (line of cart.items(); track line.productId) {
+      <li class="line" [attr.data-testid]="'cart-line-' + line.productId">
+        <div class="line__info">
+          <span class="line__name">{{ line.name }}</span>
+          @if (!compact()) {
+            <span class="line__unit">{{ line.price | euro }} / Stück</span>
+          }
+        </div>
+        <div
+          class="stepper"
+          role="group"
+          [attr.aria-label]="'Menge ' + line.name"
+        >
+          <button
+            type="button"
+            class="stepper__button"
+            [attr.data-testid]="'dec-' + line.productId"
+            [attr.aria-label]="line.name + ': eins weniger'"
+            (click)="decrement(line)"
+          >
+            −
+          </button>
+          <span
+            class="stepper__qty"
+            [attr.data-testid]="'qty-' + line.productId"
+            >{{ line.quantity }}</span
+          >
+          <button
+            type="button"
+            class="stepper__button"
+            [attr.data-testid]="'inc-' + line.productId"
+            [attr.aria-label]="line.name + ': eins mehr'"
+            (click)="increment(line)"
+          >
+            +
+          </button>
+        </div>
+        <span class="line__sum">{{ line.price * line.quantity | euro }}</span>
+        <button
+          type="button"
+          class="line__remove"
+          [attr.data-testid]="'remove-' + line.productId"
+          [attr.aria-label]="line.name + ' entfernen'"
+          (click)="remove(line)"
+        >
+          Entfernen
+        </button>
+      </li>
+    }
+  </ul>
+} @else {
+  <p class="empty" data-testid="cart-empty">Der Warenkorb ist leer.</p>
+}
+
+<!-- Focus target when the focused button goes away (see CartView.keepFocus). -->
+<div class="summary" tabindex="-1" #summary>
+  <span>Summe</span>
+  <strong class="summary__total" data-testid="cart-total">{{
+    cart.total() | euro
+  }}</strong>
+</div>
+
+<button
+  type="button"
+  class="checkout"
+  data-testid="checkout"
+  [disabled]="!cart.items().length"
+  (click)="checkout()"
+>
+  Bestellen
+</button>
+
+<!-- Always rendered: live regions inserted together with their text are often
+     not announced. -->
+<div role="status">
+  @if (confirmation(); as order) {
+    <div class="confirmation" data-testid="order-confirmation">
+      <p class="confirmation__text">
+        Vielen Dank! Bestellung <strong>{{ order.orderId }}</strong> ist
+        eingegangen.
+      </p>
+      <p class="confirmation__details">
+        {{ order.itemCount }} Artikel · {{ order.total | euro }}
+      </p>
+      <button
+        type="button"
+        class="confirmation__close"
+        aria-label="Bestätigung schließen"
+        (click)="dismissConfirmation()"
+      >
+        ×
+      </button>
+    </div>
+  }
+</div>

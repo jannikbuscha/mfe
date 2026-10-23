@@ -1,0 +1,15 @@
+@if (entries().length) {
+  <ol class="log">
+    @for (entry of entries(); track $index) {
+      <li class="log__entry" data-testid="event-log-entry">
+        <time class="log__time">{{
+          entry.timestamp | date: 'HH:mm:ss.SSS'
+        }}</time>
+        <span class="log__type">{{ entry.type }}</span>
+        <pre class="log__data">{{ entry.data | json }}</pre>
+      </li>
+    }
+  </ol>
+} @else {
+  <p class="log__empty">{{ emptyText() }}</p>
+}

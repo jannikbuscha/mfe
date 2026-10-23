@@ -1,0 +1,10 @@
+{
+  "name": "mf2-feature-cart",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/mf2/feature-cart/src",
+  "prefix": "mf2",
+  "projectType": "library",
+  "tags": ["scope:mf2", "type:feature"],
+  "// targets": "to see all targets run: nx show project mf2-feature-cart --web",
+  "targets": {}
+}

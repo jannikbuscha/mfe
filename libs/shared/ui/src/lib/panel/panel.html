@@ -1,0 +1,14 @@
+<section class="panel">
+  <header class="panel__header">
+    <div>
+      <h2 class="panel__heading">{{ heading() }}</h2>
+      @if (caption(); as caption) {
+        <p class="panel__caption">{{ caption }}</p>
+      }
+    </div>
+    <ng-content select="[uiPanelActions]" />
+  </header>
+  <div class="panel__body">
+    <ng-content />
+  </div>
+</section>

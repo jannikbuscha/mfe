@@ -1,0 +1,27 @@
+<header class="intro">
+  <h2>Katalog</h2>
+  <p>
+    Kaffee &amp; Gebäck aus MF1. Der Warenkorb liegt in der Event Registry
+    (<code>cart.items</code>) und ist in jeder Anwendung derselbe.
+  </p>
+</header>
+
+<ul class="grid">
+  @for (product of products(); track product.id) {
+    <li>
+      <mf1-product-card
+        [product]="product"
+        [quantityInCart]="cart.quantityOf(product.id)"
+        (add)="add($event)"
+      >
+        <a
+          class="details"
+          [routerLink]="['.', product.id]"
+          [attr.aria-label]="'Details zu ' + product.name"
+          [attr.data-testid]="'details-' + product.id"
+          >Details</a
+        >
+      </mf1-product-card>
+    </li>
+  }
+</ul>

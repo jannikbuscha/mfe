@@ -1,0 +1,18 @@
+// Global styles of the standalone app only. Components rendered inside the
+// shell must not rely on anything defined here.
+html,
+body {
+  margin: 0;
+}
+
+body {
+  background: #f8fafc;
+  color: #0f172a;
+  font-family:
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+}

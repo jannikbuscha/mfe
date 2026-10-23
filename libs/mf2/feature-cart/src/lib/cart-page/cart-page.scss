@@ -1,0 +1,19 @@
+:host {
+  display: block;
+  max-width: 48rem;
+}
+
+.nav-link {
+  padding: 0.35rem 0.75rem;
+  border: 1px solid #fed7aa;
+  border-radius: 999px;
+  color: #c2410c;
+  font-size: 0.85rem;
+  text-decoration: none;
+  white-space: nowrap;
+
+  &:hover,
+  &:focus-visible {
+    background: #fff7ed;
+  }
+}

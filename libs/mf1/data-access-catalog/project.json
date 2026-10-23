@@ -1,0 +1,10 @@
+{
+  "name": "mf1-data-access-catalog",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/mf1/data-access-catalog/src",
+  "prefix": "mf1",
+  "projectType": "library",
+  "tags": ["scope:mf1", "type:data-access"],
+  "// targets": "to see all targets run: nx show project mf1-data-access-catalog --web",
+  "targets": {}
+}

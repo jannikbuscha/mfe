@@ -1,0 +1,10 @@
+{
+  "name": "mf1-feature-catalog",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/mf1/feature-catalog/src",
+  "prefix": "mf1",
+  "projectType": "library",
+  "tags": ["scope:mf1", "type:feature"],
+  "// targets": "to see all targets run: nx show project mf1-feature-catalog --web",
+  "targets": {}
+}

@@ -1,0 +1,49 @@
+:host {
+  display: block;
+}
+
+.state {
+  margin: 0;
+  padding: 1rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+}
+
+.state--loading {
+  background: #f1f5f9;
+  color: #475569;
+  animation: pulse 1.2s ease-in-out infinite;
+}
+
+.state--error {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+}
+
+.state__message {
+  margin: 0;
+  font-weight: 600;
+}
+
+.state__hint {
+  margin: 0.25rem 0 0;
+  color: #7f1d1d;
+  font-size: 0.85rem;
+
+  code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+}
+
+@keyframes pulse {
+  50% {
+    opacity: 0.6;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .state--loading {
+    animation: none;
+  }
+}

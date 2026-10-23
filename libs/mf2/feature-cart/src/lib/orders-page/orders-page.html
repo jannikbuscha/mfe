@@ -1,0 +1,27 @@
+<ui-panel heading="Bestellungen" caption="mf2 · ./Routes" accent="mf2">
+  <a uiPanelActions class="nav-link" routerLink=".." data-testid="cart-link"
+    >Zurück zum Warenkorb</a
+  >
+
+  @if (orders().length) {
+    <ol class="orders">
+      @for (order of orders(); track order.orderId) {
+        <li class="order" [attr.data-testid]="'order-' + order.orderId">
+          <div class="order__head">
+            <strong class="order__id">{{ order.orderId }}</strong>
+            <time class="order__time">{{ order.time }}</time>
+          </div>
+          <span class="order__count">{{ order.itemCount }} Artikel</span>
+          <strong class="order__total">{{ order.total | euro }}</strong>
+        </li>
+      }
+    </ol>
+  } @else {
+    <p class="empty" data-testid="orders-empty">Noch keine Bestellungen.</p>
+  }
+
+  <p class="hint">
+    Die letzten {{ maxOrders }} Bestellungen aus dem Event
+    <code>cart.checked-out</code>, neueste zuerst.
+  </p>
+</ui-panel>

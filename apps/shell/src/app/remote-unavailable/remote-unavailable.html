@@ -1,0 +1,16 @@
+<ui-panel
+  data-testid="remote-unavailable"
+  heading="Micro Frontend nicht erreichbar"
+  [caption]="remote + ' · ./Routes'"
+>
+  <p class="message">
+    <strong>{{ remote }}</strong> ist gerade nicht erreichbar, deshalb kann
+    diese Seite nicht angezeigt werden.
+  </p>
+  <p class="hint">
+    Starte das Remote mit <code>npx nx serve {{ remote }}</code> und lade die
+    Seite anschließend neu. Die Shell und das andere Micro Frontend
+    funktionieren weiterhin.
+  </p>
+  <a class="back" routerLink="/">Zum Dashboard</a>
+</ui-panel>

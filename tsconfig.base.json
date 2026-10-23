@@ -1,0 +1,42 @@
+{
+  "compileOnSave": false,
+  "compilerOptions": {
+    "rootDir": ".",
+    "sourceMap": true,
+    "declaration": false,
+    "moduleResolution": "bundler",
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "importHelpers": true,
+    "target": "es2022",
+    "module": "esnext",
+    "lib": ["es2022", "dom"],
+    "skipLibCheck": true,
+    "skipDefaultLibCheck": true,
+    "paths": {
+      "@mfe/shared/util-event-registry": [
+        "./libs/shared/util-event-registry/src/index.ts"
+      ],
+      "@mfe/shared/data-access-event-bus": [
+        "./libs/shared/data-access-event-bus/src/index.ts"
+      ],
+      "@mfe/shared/data-access-cart": [
+        "./libs/shared/data-access-cart/src/index.ts"
+      ],
+      "@mfe/shared/ui": ["./libs/shared/ui/src/index.ts"],
+      "@mfe/shell/feature-dashboard": [
+        "./libs/shell/feature-dashboard/src/index.ts"
+      ],
+      "@mfe/shell/util-federation": [
+        "./libs/shell/util-federation/src/index.ts"
+      ],
+      "@mfe/mf1/feature-catalog": ["./libs/mf1/feature-catalog/src/index.ts"],
+      "@mfe/mf1/data-access-catalog": [
+        "./libs/mf1/data-access-catalog/src/index.ts"
+      ],
+      "@mfe/mf1/ui-catalog": ["./libs/mf1/ui-catalog/src/index.ts"],
+      "@mfe/mf2/feature-cart": ["./libs/mf2/feature-cart/src/index.ts"]
+    }
+  },
+  "exclude": ["node_modules", "tmp"]
+}

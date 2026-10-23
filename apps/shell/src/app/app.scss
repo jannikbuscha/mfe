@@ -1,0 +1,139 @@
+:host {
+  display: block;
+  min-height: 100vh;
+}
+
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1.5rem;
+  padding: 0.75rem 1.5rem;
+  background: #fff;
+  border-top: 4px solid #4f46e5;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #0f172a;
+  text-decoration: none;
+}
+
+.brand__logo {
+  color: #4f46e5;
+  font-size: 1.25rem;
+}
+
+.brand__name {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.nav__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.75rem;
+  border-radius: 8px;
+  color: #475569;
+  font-weight: 500;
+  text-decoration: none;
+
+  &:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+  }
+
+  &:focus-visible {
+    outline: 2px solid #4f46e5;
+    outline-offset: 2px;
+  }
+
+  // Compound selector: as specific as :hover, and wins by coming later.
+  &.nav__link--active {
+    background: #eef2ff;
+    color: #3730a3;
+  }
+}
+
+.nav__origin {
+  padding: 0 0.35rem;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.nav__origin--mf1 {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+.nav__origin--mf2 {
+  background: #ffedd5;
+  color: #c2410c;
+}
+
+.cart {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-left: auto;
+  padding: 0.35rem 0.75rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 999px;
+  color: #0f172a;
+  text-decoration: none;
+
+  &:hover {
+    border-color: #ea580c;
+  }
+
+  &:focus-visible {
+    outline: 2px solid #4f46e5;
+    outline-offset: 2px;
+  }
+}
+
+.cart__badge {
+  min-width: 1.5rem;
+  padding: 0.05rem 0.4rem;
+  border-radius: 999px;
+  background: #c2410c;
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+// Narrow screens: brand and cart in the first row, navigation below.
+@media (max-width: 899px) {
+  .nav {
+    order: 1;
+    flex-basis: 100%;
+  }
+}
+
+// Below 600px the wrapped header would cover a fifth of the viewport.
+@media (min-width: 600px) {
+  .header {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+}
+
+.content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1.5rem;
+}
