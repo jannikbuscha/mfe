@@ -15,23 +15,60 @@ Die Shell zeigt beide MFs
 - **nebeneinander** auf dem Dashboard (`/`) – jedes Remote liefert dafür ein `./Widget` (auf schmalen Bildschirmen untereinander), und
 - **über den Router** (`/mf1`, `/mf1/:productId`, `/mf2`, `/mf2/orders`) – jedes Remote liefert dafür seine `./Routes`.
 
+**Live-Demo:** https://jannikbuscha.github.io/mfe/ (siehe [GitHub Pages](#github-pages))
+
+### Architektur
+
+```mermaid
+flowchart LR
+  manifest[/"federation.manifest.json"/]
+
+  subgraph page["Browser · eine Seite, eine Angular-Instanz"]
+    direction TB
+    registry[("window.__NF_REGISTRY__<br/>NF Event Registry")]
+
+    subgraph shell["shell · Host :4200"]
+      main["main.ts<br/>createRegistry() + initFederation()"]
+      router["Router<br/>/mf1/… · /mf2/…"]
+      dashboard["Dashboard<br/>Widgets nebeneinander"]
+      header["Header<br/>Warenkorb-Badge"]
+    end
+
+    subgraph mf1["mf1 · Katalog :4201"]
+      mf1routes["./Routes"]
+      mf1widget["./Widget"]
+    end
+
+    subgraph mf2["mf2 · Warenkorb :4202"]
+      mf2routes["./Routes"]
+      mf2widget["./Widget"]
+    end
+
+    shared[["Shared Singletons<br/>Angular · RxJS · @mfe/shared/*"]]
+  end
+
+  main -->|"liest Remotes"| manifest
+  main -->|"createRegistry() · register('orch.init-ready')"| registry
+  router -->|"loadChildren"| mf1routes
+  router -->|"loadChildren"| mf2routes
+  dashboard -->|"NgComponentOutlet"| mf1widget
+  dashboard -->|"NgComponentOutlet"| mf2widget
+  mf1 <-->|"cart.items · catalog.product-selected"| registry
+  mf2 <-->|"cart.items · cart.checked-out · catalog.product-selected"| registry
+  header -->|"cart.items"| registry
+  shell -.- shared
+  mf1 -.- shared
+  mf2 -.- shared
+
+  classDef shellStyle fill:#eef2ff,stroke:#4f46e5,color:#1e1b4b
+  classDef mf1Style fill:#e0f2fe,stroke:#0369a1,color:#0c4a6e
+  classDef mf2Style fill:#ffedd5,stroke:#c2410c,color:#7c2d12
+  class shell shellStyle
+  class mf1 mf1Style
+  class mf2 mf2Style
 ```
-                       ┌──────────── window.__NF_REGISTRY__ ────────────┐
-                       │  orch.init-ready  (Resource, register/onReady)  │
-                       │  cart.items       (State-Channel, update/on)    │
-                       │  cart.checked-out (Event-Log, emit/on replay N) │
-                       │  catalog.product-selected (Event, emit/on)      │
-                       └──────▲──────────────────▲──────────────────▲────┘
-                              │                  │                  │
-   ┌─────────────── shell :4200 ──────────────┐  │                  │
-   │ main.ts: createRegistry() + initFederation│  │                  │
-   │ Dashboard:  [ mf1 ./Widget | mf2 ./Widget ]──┘                  │
-   │ Router:     /mf1 → mf1 ./Routes, /mf2 → mf2 ./Routes ───────────┘
-   └───────────────────────────────────────────┘
-          ▲ federation.manifest.json
-          ├── http://localhost:4201/remoteEntry.json  (mf1)
-          └── http://localhost:4202/remoteEntry.json  (mf2)
-```
+
+Die Shell lädt beide Remotes über das Manifest, rendert ihre `./Widget`s auf dem Dashboard und hängt ihre `./Routes` in den eigenen Router. Angular, RxJS und die `@mfe/shared/*`-Libraries existieren nur einmal; alles, was zwischen den Micro Frontends fließt, geht über die Registry.
 
 ## Schnellstart
 
@@ -111,6 +148,54 @@ Libraries folgen dem üblichen Nx-Schema `libs/<scope>/<type>[-<name>]` mit Tags
 
 (`shell-e2e` trägt `scope:shell, type:e2e` und importiert keine Libraries.)
 
+Abhängigkeiten der Projekte (vereinfacht, aus `npx nx graph`):
+
+```mermaid
+flowchart TB
+  subgraph apps["apps · type:app"]
+    direction LR
+    shellApp["shell"]
+    mf1App["mf1"]
+    mf2App["mf2"]
+  end
+
+  subgraph scopeShell["scope:shell"]
+    dash["feature-dashboard"] --> fed["util-federation"]
+  end
+
+  subgraph scopeMf1["scope:mf1"]
+    cat["feature-catalog"] --> catUi["ui-catalog"]
+    cat --> catData["data-access-catalog"]
+  end
+
+  subgraph scopeMf2["scope:mf2"]
+    cartFeature["feature-cart"]
+  end
+
+  subgraph scopeShared["scope:shared · zur Laufzeit geteilt (Singletons)"]
+    direction LR
+    ui["ui"]
+    cartStore["data-access-cart"] --> bus["data-access-event-bus"] --> contract["util-event-registry"]
+  end
+
+  shellApp --> dash
+  mf1App --> cat
+  mf2App --> cartFeature
+  scopeShell --> scopeShared
+  scopeMf1 --> scopeShared
+  scopeMf2 --> scopeShared
+  cat x-. "verboten (enforce-module-boundaries)" .-x cartFeature
+
+  classDef shellStyle fill:#eef2ff,stroke:#4f46e5,color:#1e1b4b
+  classDef mf1Style fill:#e0f2fe,stroke:#0369a1,color:#0c4a6e
+  classDef mf2Style fill:#ffedd5,stroke:#c2410c,color:#7c2d12
+  classDef sharedStyle fill:#f1f5f9,stroke:#475569,color:#0f172a
+  class scopeShell shellStyle
+  class scopeMf1 mf1Style
+  class scopeMf2 mf2Style
+  class scopeShared sharedStyle
+```
+
 Damit kann MF1 technisch nicht auf Code von MF2 (oder der Shell) zugreifen. Gemeinsam nutzen die Micro Frontends nur `scope:shared`-Code: den Event-Contract, zustandslose Fassaden über die Registry (`EventBus`, `CartStore`) und UI-Bausteine. Kommuniziert wird ausschließlich über die Registry.
 
 ## Native Federation
@@ -123,6 +208,29 @@ Damit kann MF1 technisch nicht auf Code von MF2 (oder der Shell) zugreifen. Geme
 - Geteilt werden Angular, RxJS und – per `sharedMappings: mappingsFromWorkspace().filter(['@mfe/shared/*'])` – nur die `scope:shared`-Libraries (Singletons). App-spezifische Libraries werden ins jeweilige Bundle gebaut.
 - Shell und Remotes teilen sich **eine** Angular-, RxJS- und `@mfe/shared`-Instanz. Ändern sich Angular-Version oder `@mfe/shared`, müssen alle drei Apps gemeinsam gebaut und ausgeliefert werden (`nx affected` baut dann ohnehin alle). Payloads auf der Registry sollten abwärtskompatibel bleiben – oder unter neuem Event-Namen erscheinen.
 - `@angular/platform-browser/animations*` steht auf der `skip`-Liste, weil `@angular/animations` nicht installiert ist.
+
+### Routing
+
+Die Shell hängt die `./Routes` der Remotes unter `/mf1` bzw. `/mf2` ein; Links innerhalb der Remotes sind relativ, deshalb funktionieren dieselben Routen auch standalone unter `/`.
+
+```mermaid
+flowchart LR
+  router{"Shell-Router"}
+  router -->|"/"| dash["Dashboard<br/>lazy aus @mfe/shell/feature-dashboard"]
+  router -->|"/mf1/…"| mf1["loadRemoteRoutes('mf1')<br/>mf1 ./Routes"]
+  router -->|"/mf2/…"| mf2["loadRemoteRoutes('mf2')<br/>mf2 ./Routes"]
+  router -->|"alles andere"| home["Redirect → /"]
+
+  mf1 --> catalog["'' → Katalog"]
+  mf1 --> detail["':productId' → Produktdetail"]
+  mf1 --> mf1wild["'**' → /mf1"]
+  mf2 --> cart["'' → Warenkorb"]
+  mf2 --> orders["'orders' → Bestellungen"]
+  mf2 --> mf2wild["'**' → /mf2"]
+
+  mf1 -. "Remote nicht erreichbar" .-> fallback["RemoteUnavailable"]
+  mf2 -. "Remote nicht erreichbar" .-> fallback
+```
 
 ## NF Event Registry
 
@@ -150,6 +258,37 @@ reachableRemotes('federation.manifest.json')
 
 `reachableRemotes()` (`apps/shell/src/reachable-remotes.ts`) lädt das Manifest selbst und übergibt nur Remotes, deren `remoteEntry.json` innerhalb von 3 s antwortet. `initFederation()` wartet sonst ohne Timeout auf jedes Remote – ein hängendes Remote würde die ganze Shell blockieren. Fehlende Remotes landen in den Fallbacks der Shell („… ist nicht erreichbar“ im Dashboard bzw. als Route).
 
+Ablauf beim Start der Shell:
+
+```mermaid
+sequenceDiagram
+  autonumber
+  participant B as Browser
+  participant H as shell-Server
+  participant M as shell · main.ts
+  participant R as Event Registry
+  participant O as NF Orchestrator
+  participant S as mf1 / mf2
+  participant A as shell · Angular
+
+  B->>H: index.html, main.js
+  H-->>M: main.js läuft
+  M->>R: createRegistry() → window.__NF_REGISTRY__
+  M->>H: federation.manifest.json laden
+  M->>S: remoteEntry.json prüfen (Timeout 3 s)
+  Note over M,S: hängende oder fehlende Remotes werden ausgelassen
+  M->>O: initFederation(erreichbare Remotes)
+  O->>S: remoteEntry.json laden
+  O-->>M: Import Map aktiv, Loader bereit
+  M->>R: register('orch.init-ready', loaders)
+  M->>A: import('./bootstrap')
+  A->>R: onReady('orch.init-ready')
+  R-->>A: Loader (sofort – Resource ist gelatcht)
+  A->>O: loadRemoteModule('mf1', './Widget')
+  O->>S: Widget-Chunk laden
+  S-->>A: Standalone-Component (nutzt das geteilte Angular)
+```
+
 Die Shell lädt Remotes nicht über das (deprecated) globale `loadRemoteModule`, sondern holt sich die Loader per `onReady('orch.init-ready', …)` aus der Registry (`@mfe/shell/util-federation`). Da Resources „latchen“, gibt es kein Race mit `initFederation`.
 
 ### Event-Contract
@@ -162,6 +301,43 @@ Definiert in `libs/shared/util-event-registry/src/lib/contracts.ts` (alle Payloa
 | `cart.items`               | State-Channel (`update`, replay 1)                 | MF1, MF2  | MF1 (Mengen), MF2 (Warenkorb), Shell (Badge), Monitor                |
 | `cart.checked-out`         | Event-Log (`emit`, replay N)                       | MF2       | MF2 (Bestellungen, Backfill 20), Monitor                             |
 | `catalog.product-selected` | Event (`emit`); Widgets replay 1, Monitor replay N | MF1       | MF1 (aktiver „Auswählen“-Button), MF2 („Zuletzt angesehen“), Monitor |
+
+Ablauf, wenn Nutzer:innen etwas in den Warenkorb legen, ein Produkt auswählen und bestellen:
+
+```mermaid
+sequenceDiagram
+  actor U as Nutzer
+  participant W1 as mf1 · Katalog
+  participant C as CartStore (shared)
+  participant R as Event Registry
+  participant W2 as mf2 · Warenkorb
+  participant SH as shell · Badge + Monitor
+
+  U->>W1: „In den Warenkorb“
+  W1->>C: add(product)
+  C->>R: update('cart.items', reducer)
+  R-->>C: on('cart.items') → Signal items()
+  par alle Consumer synchron
+    C-->>W1: „Im Warenkorb: 1“
+    C-->>W2: Warenkorb-Zeile + Summe
+    C-->>SH: Badge itemCount()
+    R-->>SH: history('cart.items') → Event-Monitor
+  end
+
+  U->>W1: „Auswählen“
+  W1->>R: emit('catalog.product-selected')
+  R-->>W2: state() → „Zuletzt angesehen“
+
+  U->>W2: „Bestellen“
+  W2->>C: checkout()
+  C->>R: emit('cart.checked-out', order)
+  C->>R: update('cart.items', leer)
+
+  U->>SH: Navigation /mf2/orders
+  SH->>W2: mf2 ./Routes → OrdersPage
+  W2->>R: history('cart.checked-out', limit 20)
+  R-->>W2: Backfill per Microtask-Replay + Live-Events
+```
 
 So zeigt sich das Verhalten der Registry in der Demo:
 
@@ -186,6 +362,38 @@ this.bus.on$('cart.checked-out', { replay: 0 }).subscribe(...);       // Observa
 ```
 
 Abos enden automatisch mit der Komponente/dem Service (`DestroyRef`). Die Registry liefert ihr Replay per Microtask; Events, die davor live ankommen, würden sonst doppelt bzw. in falscher Reihenfolge erscheinen – `state()` und `history()` gleichen das aus. In Tests wird statt `window.__NF_REGISTRY__` per `EVENT_REGISTRY`-Token eine eigene `createRegistry()`-Instanz injiziert.
+
+## GitHub Pages
+
+Der Workflow `.github/workflows/github-pages.yml` veröffentlicht Shell und Remotes als **eine** statische Seite unter https://jannikbuscha.github.io/mfe/:
+
+```mermaid
+flowchart LR
+  push["Push auf main"] --> workflow["GitHub Actions<br/>.github/workflows/github-pages.yml"]
+  workflow --> build["nx run shell:github-pages<br/>baut shell, mf1, mf2 (production)"]
+  build --> assemble["tools/github-pages/assemble.mjs<br/>base href, Manifest, 404.html"]
+  assemble --> deploy["actions/deploy-pages"]
+
+  subgraph site["https://jannikbuscha.github.io/mfe/"]
+    root["/ → shell<br/>404.html → shell (Deep Links)"]
+    r1["/remotes/mf1/ → mf1"]
+    r2["/remotes/mf2/ → mf2"]
+    manifest["federation.manifest.json<br/>./remotes/mf1|mf2/remoteEntry.json"]
+  end
+
+  deploy --> site
+```
+
+- `nx run shell:github-pages --base-path=/mfe` baut alle drei Apps (production) und ruft `tools/github-pages/assemble.mjs` auf. Das Skript setzt die `<base href>`, schreibt ein Manifest mit relativen URLs (`./remotes/mf1/remoteEntry.json`), kopiert `index.html` nach `404.html` (Deep Links wie `/mfe/mf1/espresso`) und legt die Remotes unter `/remotes/` ab, damit sie nicht mit den Shell-Routen `/mf1` und `/mf2` kollidieren.
+- Die Remotes sind dort auch standalone erreichbar: https://jannikbuscha.github.io/mfe/remotes/mf1/ und https://jannikbuscha.github.io/mfe/remotes/mf2/ (Deep Links funktionieren auf Pages nur für die Shell).
+- Pull Requests bauen die Seite nur; deployt wird bei jedem Push auf `main` (oder manuell per „Run workflow“).
+- Einmalig im Repository einstellen: **Settings → Pages → Source: GitHub Actions**.
+
+Lokal ausprobieren:
+
+```bash
+npx nx run shell:github-pages --base-path=/mfe   # → dist/github-pages
+```
 
 ## Ein weiteres Remote hinzufügen
 

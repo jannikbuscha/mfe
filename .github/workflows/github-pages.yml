@@ -1,0 +1,65 @@
+name: GitHub Pages
+
+# Publishes shell, mf1 and mf2 as one static site:
+#   https://<owner>.github.io/<repo>/                shell
+#   https://<owner>.github.io/<repo>/remotes/mf1/    mf1 (standalone)
+#   https://<owner>.github.io/<repo>/remotes/mf2/    mf2 (standalone)
+# Requires Settings → Pages → Source: "GitHub Actions".
+
+on:
+  push:
+    branches:
+      - main
+  # Pull requests only build the site, they do not deploy it.
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: github-pages-${{ github.event_name == 'pull_request' && github.ref || 'deploy' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+          cache: 'npm'
+
+      - run: npm ci
+
+      - name: Configure Pages
+        id: pages
+        if: github.event_name != 'pull_request'
+        uses: actions/configure-pages@v6
+
+      # base_path is e.g. "/mfe" for a project site and "" for a custom domain.
+      - name: Build site
+        run: npx nx run shell:github-pages --base-path="$BASE_PATH"
+        env:
+          BASE_PATH: ${{ github.event_name == 'pull_request' && format('/{0}', github.event.repository.name) || steps.pages.outputs.base_path }}
+
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: dist/github-pages
+
+  deploy:
+    if: github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5

@@ -119,6 +119,18 @@
         "staticFilePath": "dist/apps/shell/browser",
         "spa": true
       }
+    },
+    "github-pages": {
+      "executor": "nx:run-commands",
+      "dependsOn": [
+        {
+          "target": "build",
+          "projects": ["shell", "mf1", "mf2"]
+        }
+      ],
+      "options": {
+        "command": "node tools/github-pages/assemble.mjs"
+      }
     }
   }
 }
