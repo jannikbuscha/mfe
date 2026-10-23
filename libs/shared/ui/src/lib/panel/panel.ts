@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input } from '@angular/core';
+import { Component, input } from '@angular/core';
 
 export type PanelAccent = 'shell' | 'mf1' | 'mf2' | 'neutral';
 
@@ -8,7 +8,6 @@ export type PanelAccent = 'shell' | 'mf1' | 'mf2' | 'neutral';
  */
 @Component({
   selector: 'ui-panel',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './panel.html',
   styleUrl: './panel.scss',
   host: { '[attr.data-accent]': 'accent()' },

@@ -1,5 +1,5 @@
 import { DatePipe, JsonPipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, input } from '@angular/core';
+import { Component, input } from '@angular/core';
 
 export interface EventLogEntry {
   type: string;
@@ -10,7 +10,6 @@ export interface EventLogEntry {
 /** Renders registry events in the order given (callers sort them). */
 @Component({
   selector: 'ui-event-log',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [DatePipe, JsonPipe],
   templateUrl: './event-log.html',
   styleUrl: './event-log.scss',
