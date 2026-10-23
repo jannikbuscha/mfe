@@ -1,0 +1,34 @@
+<a class="back" routerLink=".." data-testid="back-to-catalog"
+  >← Zurück zum Katalog</a
+>
+
+@if (product(); as product) {
+  <article class="detail">
+    <span class="detail__emoji" aria-hidden="true">{{ product.emoji }}</span>
+    <div class="detail__body">
+      <h2>{{ product.name }}</h2>
+      <p class="detail__description">{{ product.description }}</p>
+      <p class="detail__price">{{ product.price | euro }}</p>
+      <div class="detail__actions">
+        <button
+          type="button"
+          class="add"
+          [attr.data-testid]="'add-' + product.id"
+          (click)="add(product)"
+        >
+          In den Warenkorb
+        </button>
+        @if (cart.quantityOf(product.id); as quantity) {
+          <span class="in-cart" [attr.data-testid]="'in-cart-' + product.id"
+            >Im Warenkorb: {{ quantity }}</span
+          >
+        }
+      </div>
+      <p class="detail__hint">
+        Beim Öffnen wurde <code>catalog.product-selected</code> gesendet.
+      </p>
+    </div>
+  </article>
+} @else {
+  <p class="not-found" role="alert">Produkt nicht gefunden.</p>
+}

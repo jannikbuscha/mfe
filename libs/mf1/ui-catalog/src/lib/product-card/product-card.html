@@ -1,0 +1,30 @@
+@let item = product();
+<article class="card">
+  <span class="card__emoji" aria-hidden="true">{{ item.emoji }}</span>
+  <div class="card__body">
+    <h3 class="card__name">{{ item.name }}</h3>
+    @if (!compact()) {
+      <p class="card__description">{{ item.description }}</p>
+    }
+    <p class="card__meta">
+      <span class="card__price">{{ item.price | euro }}</span>
+      @if (quantityInCart() > 0) {
+        <span class="card__in-cart" [attr.data-testid]="'in-cart-' + item.id"
+          >Im Warenkorb: {{ quantityInCart() }}</span
+        >
+      }
+    </p>
+  </div>
+  <div class="card__actions">
+    <ng-content />
+    <button
+      type="button"
+      class="card__add"
+      [attr.data-testid]="'add-' + item.id"
+      [attr.aria-label]="item.name + ' in den Warenkorb'"
+      (click)="add.emit(item)"
+    >
+      In den Warenkorb
+    </button>
+  </div>
+</article>

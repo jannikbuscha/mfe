@@ -1,1 +1,19 @@
-/* You can add global styles to this file, and also import other style files */
+// Base typography only. Remote components rendered in the shell bring their
+// own component styles.
+html,
+body {
+  margin: 0;
+}
+
+body {
+  background: #f8fafc;
+  color: #0f172a;
+  font-family:
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}

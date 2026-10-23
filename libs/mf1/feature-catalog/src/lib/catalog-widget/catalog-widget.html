@@ -1,0 +1,27 @@
+<p class="hint">
+  „Details“ sendet <code>catalog.product-selected</code>, „In den Warenkorb“
+  aktualisiert <code>cart.items</code>.
+</p>
+
+<ul class="list">
+  @for (product of products(); track product.id) {
+    <li>
+      <mf1-product-card
+        compact
+        [product]="product"
+        [quantityInCart]="cart.quantityOf(product.id)"
+        (add)="add($event)"
+      >
+        <button
+          type="button"
+          class="details"
+          [class.details--active]="lastSelected()?.productId === product.id"
+          [attr.data-testid]="'select-' + product.id"
+          (click)="select(product)"
+        >
+          Details
+        </button>
+      </mf1-product-card>
+    </li>
+  }
+</ul>

@@ -85,11 +85,31 @@ export class EventBus {
     const destroyRef = resolveDestroyRef(this.history, options);
     const { limit } = options;
     const events = signal<readonly NFEventData<MfeEvents[K]>[]>([]);
+    // The registry replays in a microtask. An event emitted before that
+    // microtask runs arrives live first and then again with the replay, so
+    // until the replay is through, drop copies and restore chronological order.
+    let replayWindow: Set<string> | undefined = new Set();
     const unsubscribe = this.registry.on(
       type,
-      (event) => events.update((list) => [...list, event].slice(-limit)),
+      (event) => {
+        if (!replayWindow) {
+          events.update((list) => [...list, event].slice(-limit));
+          return;
+        }
+        const key = `${event.timestamp}:${JSON.stringify(event.data)}`;
+        if (!replayWindow.has(key)) {
+          replayWindow.add(key);
+          events.update((list) =>
+            [...list, event]
+              .sort((a, b) => a.timestamp - b.timestamp)
+              .slice(-limit),
+          );
+        }
+      },
       { replay: limit },
     );
+    // Queued after the registry's replay microtask, so it runs once that is done.
+    queueMicrotask(() => (replayWindow = undefined));
     destroyRef.onDestroy(unsubscribe);
     return events.asReadonly();
   }

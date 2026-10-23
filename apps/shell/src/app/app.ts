@@ -1,13 +1,14 @@
-import { Component } from '@angular/core';
-import { RouterModule } from '@angular/router';
-import { NxWelcome } from './nx-welcome';
+import { Component, inject } from '@angular/core';
+import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { CartStore } from '@mfe/shared/data-access-cart';
 
 @Component({
-  imports: [NxWelcome, RouterModule],
+  imports: [RouterLink, RouterLinkActive, RouterOutlet],
   selector: 'shell-root',
   templateUrl: './app.html',
   styleUrl: './app.scss',
 })
 export class App {
-  protected title = 'shell';
+  // The shell is a registry consumer as well: the badge follows `cart.items`.
+  protected readonly cart = inject(CartStore);
 }

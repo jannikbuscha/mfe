@@ -61,6 +61,20 @@ describe('EventBus', () => {
     expect(selected().map((e) => e.data.productId)).toEqual(['3', '4']);
   });
 
+  it('history() does not duplicate events emitted before the replay ran', async () => {
+    bus.emit('catalog.product-selected', { productId: '1', name: '1' });
+
+    const selected = bus.history('catalog.product-selected', {
+      limit: 5,
+      injector,
+    });
+    // Delivered live right away and again by the (microtask) replay.
+    bus.emit('catalog.product-selected', { productId: '2', name: '2' });
+    await flushReplay();
+
+    expect(selected().map((e) => e.data.productId)).toEqual(['1', '2']);
+  });
+
   it('state() throws outside an injection context without an injector', () => {
     expect(() => bus.state('cart.items')).toThrow();
   });

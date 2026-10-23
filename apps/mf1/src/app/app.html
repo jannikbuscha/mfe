@@ -1,2 +1,13 @@
-<mf1-nx-welcome></mf1-nx-welcome>
-<router-outlet></router-outlet>
+<header class="header">
+  <a class="brand" routerLink="/">
+    <h1>MF1 · Katalog</h1>
+  </a>
+  <span class="badge" title="MF1 läuft ohne Shell">standalone</span>
+  <span class="cart" data-testid="cart-count">
+    Warenkorb: <strong>{{ cart.itemCount() }}</strong>
+  </span>
+</header>
+
+<main class="content">
+  <router-outlet />
+</main>

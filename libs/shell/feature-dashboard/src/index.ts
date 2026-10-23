@@ -1,1 +1,1 @@
-export * from './lib/shell-feature-dashboard/shell-feature-dashboard';
+export * from './lib/dashboard/dashboard';

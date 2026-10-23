@@ -1,0 +1,121 @@
+:host {
+  --mf1-accent: #0284c7;
+  display: block;
+  min-width: 0;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  height: 100%;
+  box-sizing: border-box;
+  padding: 1rem;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  font-family:
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
+  color: #0f172a;
+}
+
+.card__emoji {
+  font-size: 2.5rem;
+  line-height: 1;
+}
+
+.card__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.card__name {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.card__description {
+  margin: 0.25rem 0 0;
+  font-size: 0.875rem;
+  color: #475569;
+}
+
+.card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin: 0.5rem 0 0;
+  font-size: 0.875rem;
+}
+
+.card__price {
+  font-weight: 600;
+}
+
+.card__in-cart {
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  background: #e0f2fe;
+  color: #075985;
+  font-size: 0.75rem;
+}
+
+.card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.card__add {
+  padding: 0.45rem 0.8rem;
+  border: 0;
+  border-radius: 6px;
+  background: var(--mf1-accent);
+  color: #fff;
+  font: inherit;
+  font-size: 0.875rem;
+  cursor: pointer;
+
+  &:hover {
+    background: #0369a1;
+  }
+
+  &:focus-visible {
+    outline: 2px solid #0f172a;
+    outline-offset: 2px;
+  }
+}
+
+// Compact variant: one row per product (dashboard widget).
+:host(.compact) {
+  .card {
+    flex-flow: row wrap;
+    align-items: center;
+    padding: 0.6rem 0.75rem;
+  }
+
+  .card__emoji {
+    font-size: 1.75rem;
+  }
+
+  // On narrow panels the actions move below the product instead of
+  // squeezing its name.
+  .card__body {
+    flex: 1 1 7rem;
+  }
+
+  .card__actions {
+    margin-left: auto;
+  }
+
+  .card__meta {
+    margin-top: 0.15rem;
+  }
+}

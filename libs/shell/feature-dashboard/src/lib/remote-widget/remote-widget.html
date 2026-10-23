@@ -1,0 +1,18 @@
+<!-- error() first: value() throws while the resource is in the error state. -->
+@if (widget.error()) {
+  <div class="state state--error" role="alert">
+    <p class="state__message" data-testid="remote-error">
+      {{ remote() }} ist nicht erreichbar.
+    </p>
+    <p class="state__hint">
+      Läuft <code>npx nx serve {{ remote() }}</code
+      >? Danach die Seite neu laden.
+    </p>
+  </div>
+} @else if (widget.value(); as component) {
+  <ng-container *ngComponentOutlet="component" />
+} @else {
+  <p class="state state--loading" role="status" data-testid="remote-loading">
+    {{ remote() }} wird geladen …
+  </p>
+}

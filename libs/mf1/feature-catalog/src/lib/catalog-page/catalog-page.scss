@@ -1,0 +1,61 @@
+:host {
+  display: block;
+  font-family:
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
+  color: #0f172a;
+}
+
+.intro {
+  margin-bottom: 1.25rem;
+
+  h2 {
+    margin: 0;
+    font-size: 1.5rem;
+  }
+
+  p {
+    margin: 0.35rem 0 0;
+    color: #475569;
+  }
+
+  code {
+    font-size: 0.85em;
+    color: #0284c7;
+  }
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  // Lets the cards of one row stretch to the same height.
+  > li {
+    display: grid;
+  }
+}
+
+.details {
+  padding: 0.45rem 0.8rem;
+  border: 1px solid #bae6fd;
+  border-radius: 6px;
+  color: #0369a1;
+  font-size: 0.875rem;
+  text-decoration: none;
+
+  &:hover {
+    background: #f0f9ff;
+  }
+
+  &:focus-visible {
+    outline: 2px solid #0f172a;
+    outline-offset: 2px;
+  }
+}

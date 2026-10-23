@@ -1,0 +1,27 @@
+:host {
+  display: block;
+  max-width: 40rem;
+}
+
+.message {
+  margin: 0;
+  color: #991b1b;
+}
+
+.hint {
+  margin: 0.75rem 0 1rem;
+  color: #475569;
+  font-size: 0.9rem;
+
+  code {
+    padding: 0.1rem 0.3rem;
+    border-radius: 4px;
+    background: #f1f5f9;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+}
+
+.back {
+  color: #4f46e5;
+  font-weight: 500;
+}

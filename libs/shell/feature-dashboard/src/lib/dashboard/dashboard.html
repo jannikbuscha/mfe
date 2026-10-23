@@ -1,0 +1,28 @@
+<section class="dashboard" data-testid="dashboard">
+  <p class="lead">
+    Beide Micro Frontends nebeneinander, geladen per Native Federation. Sie
+    kennen sich nicht und sprechen nur über die NF Event Registry miteinander.
+  </p>
+
+  <div class="remotes">
+    <ui-panel
+      data-testid="slot-mf1"
+      heading="Katalog"
+      caption="mf1 · ./Widget"
+      accent="mf1"
+    >
+      <shell-remote-widget remote="mf1" />
+    </ui-panel>
+
+    <ui-panel
+      data-testid="slot-mf2"
+      heading="Warenkorb"
+      caption="mf2 · ./Widget"
+      accent="mf2"
+    >
+      <shell-remote-widget remote="mf2" />
+    </ui-panel>
+  </div>
+
+  <shell-event-monitor />
+</section>

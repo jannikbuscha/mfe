@@ -1,2 +1,58 @@
-<shell-nx-welcome></shell-nx-welcome>
-<router-outlet></router-outlet>
+<header class="header">
+  <a class="brand" routerLink="/">
+    <span class="brand__logo" aria-hidden="true">◆</span>
+    <h1 class="brand__name">MFE Shell</h1>
+  </a>
+
+  <nav class="nav" aria-label="Hauptnavigation">
+    <a
+      class="nav__link"
+      routerLink="/"
+      routerLinkActive="nav__link--active"
+      [routerLinkActiveOptions]="{ exact: true }"
+      ariaCurrentWhenActive="page"
+      data-testid="nav-dashboard"
+      >Dashboard</a
+    >
+    <a
+      class="nav__link"
+      routerLink="/mf1"
+      routerLinkActive="nav__link--active"
+      ariaCurrentWhenActive="page"
+      data-testid="nav-mf1"
+      >Katalog <span class="nav__origin nav__origin--mf1">mf1</span></a
+    >
+    <a
+      class="nav__link"
+      routerLink="/mf2"
+      routerLinkActive="nav__link--active"
+      [routerLinkActiveOptions]="{ exact: true }"
+      ariaCurrentWhenActive="page"
+      data-testid="nav-mf2"
+      >Warenkorb <span class="nav__origin nav__origin--mf2">mf2</span></a
+    >
+    <a
+      class="nav__link"
+      routerLink="/mf2/orders"
+      routerLinkActive="nav__link--active"
+      ariaCurrentWhenActive="page"
+      data-testid="nav-orders"
+      >Bestellungen <span class="nav__origin nav__origin--mf2">mf2</span></a
+    >
+  </nav>
+
+  <a
+    class="cart"
+    routerLink="/mf2"
+    [attr.aria-label]="'Warenkorb: ' + cart.itemCount() + ' Artikel'"
+  >
+    <span aria-hidden="true">🛒</span>
+    <span class="cart__badge" data-testid="cart-badge">{{
+      cart.itemCount()
+    }}</span>
+  </a>
+</header>
+
+<main class="content">
+  <router-outlet />
+</main>
