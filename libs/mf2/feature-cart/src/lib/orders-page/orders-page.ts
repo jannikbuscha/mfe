@@ -4,6 +4,9 @@ import { EventBus } from '@mfe/shared/data-access-event-bus';
 import { EuroPipe, Panel } from '@mfe/shared/ui';
 import { OrderSummary, summarizeOrder } from '../order-summary';
 
+// Must stay <= the history depth the registry guarantees per stream: with
+// { maxEvents: 50, removePercentage: 0.5 } (apps/shell/src/main.ts) a trim
+// leaves only 25 events.
 export const MAX_ORDERS = 20;
 
 /**

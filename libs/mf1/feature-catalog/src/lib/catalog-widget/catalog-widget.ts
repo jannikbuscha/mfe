@@ -7,7 +7,7 @@ import { toCartProduct, toProductSelected } from '../mappers';
 
 /**
  * Compact catalog for the shell dashboard (exposed as `./Widget`). It lives
- * outside the remote's routes, so "Details" publishes an event instead of
+ * outside the remote's routes, so "Auswählen" publishes an event instead of
  * navigating.
  */
 @Component({

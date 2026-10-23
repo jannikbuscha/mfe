@@ -1,16 +1,21 @@
 import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { Title } from '@angular/platform-browser';
-import { provideRouter, Router } from '@angular/router';
+import { provideRouter, Router, TitleStrategy } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { createRegistry } from '@softarc/native-federation-orchestrator/registry';
 import { appRoutes } from './app.routes';
 import { RemoteUnavailable } from './remote-unavailable/remote-unavailable';
+import { ShellTitleStrategy } from './shell-title-strategy';
 
-@Component({ template: '<p>Katalog</p>' })
+// Selectors keep the component IDs of the fakes apart.
+@Component({ selector: 'shell-fake-catalog', template: '<p>Katalog</p>' })
 class FakeCatalog {}
 
-@Component({ template: '<p>Widget</p>' })
+@Component({ selector: 'shell-fake-product', template: '<p>Produkt</p>' })
+class FakeProduct {}
+
+@Component({ selector: 'shell-fake-widget', template: '<p>Widget</p>' })
 class FakeWidget {}
 
 describe('appRoutes', () => {
@@ -23,7 +28,12 @@ describe('appRoutes', () => {
       loadRemoteModule,
     });
     loadRemoteModule.mockReset();
-    TestBed.configureTestingModule({ providers: [provideRouter(appRoutes)] });
+    TestBed.configureTestingModule({
+      providers: [
+        provideRouter(appRoutes),
+        { provide: TitleStrategy, useClass: ShellTitleStrategy },
+      ],
+    });
   });
 
   afterEach(() => {
@@ -33,14 +43,24 @@ describe('appRoutes', () => {
 
   it('mounts the ./Routes of mf1 under /mf1', async () => {
     loadRemoteModule.mockResolvedValue({
-      default: [{ path: '', component: FakeCatalog }],
+      default: [
+        { path: '', component: FakeCatalog },
+        { path: ':productId', title: 'Cappuccino', component: FakeProduct },
+      ],
     });
     const harness = await RouterTestingHarness.create();
+    const title = TestBed.inject(Title);
 
     await harness.navigateByUrl('/mf1', FakeCatalog);
 
     expect(loadRemoteModule).toHaveBeenCalledWith('mf1', './Routes');
-    expect(TestBed.inject(Title).getTitle()).toBe('Katalog (mf1) · MFE Shell');
+    // A remote route without a title keeps the shell's.
+    expect(title.getTitle()).toBe('Katalog · MFE Shell');
+
+    await harness.navigateByUrl('/mf1/cappuccino', FakeProduct);
+
+    // The deepest title wins.
+    expect(title.getTitle()).toBe('Cappuccino · MFE Shell');
   });
 
   it('shows RemoteUnavailable on every path of a remote that is down', async () => {

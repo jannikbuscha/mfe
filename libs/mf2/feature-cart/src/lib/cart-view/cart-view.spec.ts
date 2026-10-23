@@ -35,6 +35,17 @@ describe('CartView', () => {
     query(testId)?.click();
     await fixture.whenStable();
   };
+  // Like a keyboard user: focus the button, then activate it.
+  const press = async (testId: string) => {
+    const button = query(testId);
+    button?.focus();
+    button?.click();
+    await fixture.whenStable();
+  };
+  const summary = () =>
+    fixture.nativeElement.querySelector('.summary') as HTMLElement;
+  const liveRegion = () =>
+    fixture.nativeElement.querySelector('[role="status"]') as HTMLElement;
   const cart = () => TestBed.inject(CartStore).items();
 
   beforeEach(() => {
@@ -128,6 +139,74 @@ describe('CartView', () => {
     registry.update('cart.items', () => []);
     await fixture.whenStable();
     expect(query('order-confirmation')).toBeNull();
+  });
+
+  describe('focus', () => {
+    it('stays on the stepper while the line is still there', async () => {
+      registry.update('cart.items', () => [espresso, bagel]);
+      await render();
+
+      await press('dec-espresso');
+
+      expect(text('qty-espresso')).toBe('1');
+      expect(document.activeElement).toBe(query('dec-espresso'));
+    });
+
+    it('moves to the summary when the focused line goes away', async () => {
+      registry.update('cart.items', () => [
+        { ...espresso, quantity: 1 },
+        bagel,
+      ]);
+      await render();
+
+      await press('dec-espresso');
+      expect(query('cart-line-espresso')).toBeNull();
+      expect(document.activeElement).toBe(summary());
+
+      await press('remove-bagel');
+      expect(query('cart-empty')).not.toBeNull();
+      expect(document.activeElement).toBe(summary());
+    });
+
+    it('moves to the summary after checkout and after closing the confirmation', async () => {
+      registry.update('cart.items', () => [espresso]);
+      await render();
+
+      await press('checkout');
+      expect((query('checkout') as HTMLButtonElement).disabled).toBe(true);
+      expect(document.activeElement).toBe(summary());
+
+      const close = query('order-confirmation')?.querySelector('button');
+      close?.focus();
+      close?.click();
+      await fixture.whenStable();
+
+      expect(query('order-confirmation')).toBeNull();
+      expect(document.activeElement).toBe(summary());
+    });
+
+    it('is left alone when it was not on the removed element', async () => {
+      registry.update('cart.items', () => [espresso]);
+      await render();
+
+      query('remove-espresso')?.click();
+      await fixture.whenStable();
+
+      expect(query('cart-line-espresso')).toBeNull();
+      expect(document.activeElement).toBe(document.body);
+    });
+  });
+
+  it('announces the order in a live region that is always rendered', async () => {
+    registry.update('cart.items', () => [espresso]);
+    await render();
+    const region = liveRegion();
+    expect(region.textContent?.trim()).toBe('');
+
+    await click('checkout');
+
+    expect(liveRegion()).toBe(region);
+    expect(region.contains(query('order-confirmation'))).toBe(true);
   });
 
   it('hides unit prices in the compact layout', async () => {

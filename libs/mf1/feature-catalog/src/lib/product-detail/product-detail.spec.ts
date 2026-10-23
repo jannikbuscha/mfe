@@ -21,29 +21,35 @@ describe('ProductDetail', () => {
     const test = testRegistry();
     registry = test.registry;
     TestBed.configureTestingModule({
-      providers: [test.provider, provideRouter(catalogRoutes)],
+      providers: [
+        test.provider,
+        // Mounted like in the shell, so absolute links would fail.
+        provideRouter([{ path: 'mf1', children: catalogRoutes }]),
+      ],
     });
     selected = recordEvents(registry, 'catalog.product-selected');
     harness = await RouterTestingHarness.create();
   });
 
   it('renders the product of the route parameter', async () => {
-    await harness.navigateByUrl('/croissant', ProductDetail);
+    await harness.navigateByUrl('/mf1/croissant', ProductDetail);
 
     expect(page()?.getAttribute('data-testid')).toBe('product-detail');
     expect(text(page()?.querySelector('h2'))).toBe('Croissant');
     expect(text(page())).toContain('Buttrig und frisch gebacken.');
     expect(text(page())).toContain('2,10 €');
-    expect(byTestId(page(), 'back-to-catalog')?.getAttribute('href')).toBe('/');
+    expect(byTestId(page(), 'back-to-catalog')?.getAttribute('href')).toBe(
+      '/mf1',
+    );
   });
 
   it('publishes catalog.product-selected once per opened product', async () => {
-    await harness.navigateByUrl('/croissant', ProductDetail);
+    await harness.navigateByUrl('/mf1/croissant', ProductDetail);
     await harness.fixture.whenStable();
     expect(selected).toEqual([{ productId: 'croissant', name: 'Croissant' }]);
 
     // Same component instance, new parameter.
-    await harness.navigateByUrl('/bagel', ProductDetail);
+    await harness.navigateByUrl('/mf1/bagel', ProductDetail);
     await harness.fixture.whenStable();
     expect(selected).toEqual([
       { productId: 'croissant', name: 'Croissant' },
@@ -52,7 +58,7 @@ describe('ProductDetail', () => {
   });
 
   it('adds the product to the cart', async () => {
-    await harness.navigateByUrl('/espresso', ProductDetail);
+    await harness.navigateByUrl('/mf1/espresso', ProductDetail);
     expect(byTestId(page(), 'in-cart-espresso')).toBeNull();
 
     byTestId(page(), 'add-espresso')?.click();
@@ -63,7 +69,7 @@ describe('ProductDetail', () => {
   });
 
   it('shows a message and the back link for unknown products', async () => {
-    await harness.navigateByUrl('/pizza', ProductDetail);
+    await harness.navigateByUrl('/mf1/pizza', ProductDetail);
     await harness.fixture.whenStable();
 
     expect(text(page())).toContain('Produkt nicht gefunden.');
@@ -73,12 +79,12 @@ describe('ProductDetail', () => {
   });
 
   it('navigates back to the catalog', async () => {
-    await harness.navigateByUrl('/espresso', ProductDetail);
+    await harness.navigateByUrl('/mf1/espresso', ProductDetail);
 
     byTestId(page(), 'back-to-catalog')?.click();
     await harness.fixture.whenStable();
 
-    expect(TestBed.inject(Router).url).toBe('/');
+    expect(TestBed.inject(Router).url).toBe('/mf1');
     expect(harness.routeDebugElement?.componentInstance).toBeInstanceOf(
       CatalogPage,
     );

@@ -3,6 +3,9 @@ import { EventBus } from '@mfe/shared/data-access-event-bus';
 import { EventLog, EventLogEntry, Panel } from '@mfe/shared/ui';
 import type { MfeEventType } from '@mfe/shared/util-event-registry';
 
+// Must stay <= the history depth the registry guarantees: with the config in
+// apps/shell/src/main.ts that is maxEvents - ceil(maxEvents * removePercentage)
+// = 25, because a full registry drops half of its events at once.
 const LIMIT = 20;
 
 type EventHistory = Signal<readonly { timestamp: number; data: unknown }[]>;

@@ -13,18 +13,22 @@ describe('CatalogPage', () => {
 
   beforeEach(async () => {
     TestBed.configureTestingModule({
-      providers: [testRegistry().provider, provideRouter(catalogRoutes)],
+      providers: [
+        testRegistry().provider,
+        // Mounted like in the shell, so absolute links would fail.
+        provideRouter([{ path: 'mf1', children: catalogRoutes }]),
+      ],
     });
     harness = await RouterTestingHarness.create();
-    await harness.navigateByUrl('/', CatalogPage);
+    await harness.navigateByUrl('/mf1', CatalogPage);
   });
 
   it('renders all products with relative detail links', () => {
     expect(page()?.getAttribute('data-testid')).toBe('catalog-page');
     expect(page()?.querySelectorAll('mf1-product-card')).toHaveLength(6);
-    expect(byTestId(page(), 'details-espresso')?.getAttribute('href')).toBe(
-      '/espresso',
-    );
+    const details = byTestId(page(), 'details-espresso');
+    expect(details?.getAttribute('href')).toBe('/mf1/espresso');
+    expect(details?.getAttribute('aria-label')).toBe('Details zu Espresso');
     expect(text(byTestId(page(), 'product-cheesecake'))).toContain(
       'Käsekuchen',
     );
@@ -41,7 +45,7 @@ describe('CatalogPage', () => {
     byTestId(page(), 'details-croissant')?.click();
     await harness.fixture.whenStable();
 
-    expect(TestBed.inject(Router).url).toBe('/croissant');
+    expect(TestBed.inject(Router).url).toBe('/mf1/croissant');
     expect(harness.routeDebugElement?.componentInstance).toBeInstanceOf(
       ProductDetail,
     );

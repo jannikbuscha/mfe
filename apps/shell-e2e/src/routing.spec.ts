@@ -4,6 +4,7 @@ import { expect, test } from '@playwright/test';
 test.describe('Routing', () => {
   test('navigates through the catalog of MF1', async ({ page }) => {
     await page.goto('/');
+    await expect(page).toHaveTitle('Dashboard · MFE Shell');
 
     await page.getByTestId('nav-mf1').click();
     await expect(page).toHaveURL(/\/mf1$/);
@@ -12,6 +13,7 @@ test.describe('Routing', () => {
       'aria-current',
       'page',
     );
+    await expect(page).toHaveTitle('Katalog · MFE Shell');
 
     await page.getByTestId('details-cappuccino').click();
     await expect(page).toHaveURL(/\/mf1\/cappuccino$/);
@@ -19,6 +21,8 @@ test.describe('Routing', () => {
     await expect(detail.getByRole('heading', { level: 2 })).toHaveText(
       'Cappuccino',
     );
+    // The remote titles its own pages; the shell appends its name.
+    await expect(page).toHaveTitle('Cappuccino · MFE Shell');
 
     await detail.getByTestId('add-cappuccino').click();
     await expect(page.getByTestId('cart-badge')).toHaveText('1');
@@ -28,9 +32,9 @@ test.describe('Routing', () => {
     await expect(page.getByTestId('catalog-page')).toBeVisible();
   });
 
-  test('MF2 loaded later still sees the current cart (state replay)', async ({
-    page,
-  }) => {
+  // In the shell all MFs share one CartStore (a singleton through the shared
+  // mappings), so this checks the shared cart, not the registry's replay.
+  test('MF2 loaded later shows the cart filled in MF1', async ({ page }) => {
     await page.goto('/mf1/cappuccino');
     await page
       .getByTestId('product-detail')
@@ -44,6 +48,23 @@ test.describe('Routing', () => {
     const cart = page.getByTestId('cart-page');
     await expect(cart.getByTestId('cart-line-cappuccino')).toBeVisible();
     await expect(cart.getByTestId('qty-cappuccino')).toHaveText('1');
+  });
+
+  test('a widget created after an event still receives it (state replay)', async ({
+    page,
+  }) => {
+    await page.goto('/mf1/cappuccino');
+    // Rendered in the same change detection that emits the selection.
+    await expect(
+      page.getByTestId('product-detail').getByRole('heading', { level: 2 }),
+    ).toHaveText('Cappuccino');
+
+    // The MF2 widget subscribes to catalog.product-selected only now.
+    await page.getByTestId('nav-dashboard').click();
+
+    await expect(
+      page.getByTestId('mf2-widget').getByTestId('last-selected'),
+    ).toContainText('Cappuccino');
   });
 
   test('the orders page lists orders placed before it was opened (bounded backfill)', async ({
@@ -75,6 +96,7 @@ test.describe('Routing', () => {
     await page.goto('/mf2/orders');
 
     await expect(page.getByTestId('orders-page')).toBeVisible();
+    await expect(page).toHaveTitle('Bestellungen · MFE Shell');
     await expect(page.getByTestId('orders-empty')).toHaveText(
       'Noch keine Bestellungen.',
     );

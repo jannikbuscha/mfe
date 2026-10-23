@@ -24,13 +24,13 @@
 
   code {
     font-size: 0.85em;
-    color: #0284c7;
+    color: #0369a1;
   }
 }
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   gap: 1rem;
   margin: 0;
   padding: 0;

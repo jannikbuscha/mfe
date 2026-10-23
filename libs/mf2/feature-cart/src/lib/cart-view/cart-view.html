@@ -54,7 +54,8 @@
   <p class="empty" data-testid="cart-empty">Der Warenkorb ist leer.</p>
 }
 
-<div class="summary">
+<!-- Focus target when the focused button goes away (see CartView.keepFocus). -->
+<div class="summary" tabindex="-1" #summary>
   <span>Summe</span>
   <strong class="summary__total" data-testid="cart-total">{{
     cart.total() | euro
@@ -71,22 +72,26 @@
   Bestellen
 </button>
 
-@if (confirmation(); as order) {
-  <div class="confirmation" data-testid="order-confirmation" role="status">
-    <p class="confirmation__text">
-      Vielen Dank! Bestellung <strong>{{ order.orderId }}</strong> ist
-      eingegangen.
-    </p>
-    <p class="confirmation__details">
-      {{ order.itemCount }} Artikel · {{ order.total | euro }}
-    </p>
-    <button
-      type="button"
-      class="confirmation__close"
-      aria-label="Bestätigung schließen"
-      (click)="dismissConfirmation()"
-    >
-      ×
-    </button>
-  </div>
-}
+<!-- Always rendered: live regions inserted together with their text are often
+     not announced. -->
+<div role="status">
+  @if (confirmation(); as order) {
+    <div class="confirmation" data-testid="order-confirmation">
+      <p class="confirmation__text">
+        Vielen Dank! Bestellung <strong>{{ order.orderId }}</strong> ist
+        eingegangen.
+      </p>
+      <p class="confirmation__details">
+        {{ order.itemCount }} Artikel · {{ order.total | euro }}
+      </p>
+      <button
+        type="button"
+        class="confirmation__close"
+        aria-label="Bestätigung schließen"
+        (click)="dismissConfirmation()"
+      >
+        ×
+      </button>
+    </div>
+  }
+</div>

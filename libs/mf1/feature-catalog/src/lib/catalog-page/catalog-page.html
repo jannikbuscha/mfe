@@ -1,7 +1,7 @@
 <header class="intro">
   <h2>Katalog</h2>
   <p>
-    Kaffee &amp; Gebäck aus MF1. Der Warenkorb liegt im Event Registry
+    Kaffee &amp; Gebäck aus MF1. Der Warenkorb liegt in der Event Registry
     (<code>cart.items</code>) und ist in jeder Anwendung derselbe.
   </p>
 </header>
@@ -17,6 +17,7 @@
         <a
           class="details"
           [routerLink]="['.', product.id]"
+          [attr.aria-label]="'Details zu ' + product.name"
           [attr.data-testid]="'details-' + product.id"
           >Details</a
         >

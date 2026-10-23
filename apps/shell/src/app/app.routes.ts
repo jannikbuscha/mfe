@@ -7,29 +7,31 @@ function remoteRoutes(remote: RemoteName) {
   return loadRemoteRoutes(remote, [
     {
       path: '**',
-      title: `${remote} nicht erreichbar · MFE Shell`,
+      title: `${remote} nicht erreichbar`,
       component: RemoteUnavailable,
       data: { remote },
     },
   ]);
 }
 
+// ShellTitleStrategy appends the app name. The remotes title their own pages;
+// the titles of 'mf1' and 'mf2' only apply where a remote route has none.
 export const appRoutes: Route[] = [
   {
     path: '',
     pathMatch: 'full',
-    title: 'Dashboard · MFE Shell',
+    title: 'Dashboard',
     loadComponent: () =>
       import('@mfe/shell/feature-dashboard').then((m) => m.Dashboard),
   },
   {
     path: 'mf1',
-    title: 'Katalog (mf1) · MFE Shell',
+    title: 'Katalog',
     loadChildren: remoteRoutes('mf1'),
   },
   {
     path: 'mf2',
-    title: 'Warenkorb (mf2) · MFE Shell',
+    title: 'Warenkorb',
     loadChildren: remoteRoutes('mf2'),
   },
   { path: '**', redirectTo: '' },

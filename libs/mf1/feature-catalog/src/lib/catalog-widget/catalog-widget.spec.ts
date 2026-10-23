@@ -20,14 +20,17 @@ describe('CatalogWidget', () => {
     await fixture.whenStable();
   });
 
-  it('renders a compact card with add and details buttons per product', () => {
+  it('renders a compact card with add and select buttons per product', () => {
     expect(element.getAttribute('data-testid')).toBe('mf1-widget');
     const cards = element.querySelectorAll('mf1-product-card');
     expect(cards).toHaveLength(6);
     expect([...cards].every((card) => card.classList.contains('compact'))).toBe(
       true,
     );
-    expect(text(byTestId(element, 'select-espresso'))).toBe('Details');
+    const select = byTestId(element, 'select-espresso');
+    expect(text(select)).toBe('Auswählen');
+    expect(select?.getAttribute('aria-label')).toBe('Auswählen: Espresso');
+    expect(select?.hasAttribute('aria-current')).toBe(false);
     expect(text(byTestId(element, 'add-espresso'))).toBe('In den Warenkorb');
     expect(element.querySelector('a[href]')).toBeNull();
   });
@@ -37,7 +40,7 @@ describe('CatalogWidget', () => {
     byTestId(element, 'add-espresso')?.click();
     byTestId(element, 'add-bagel')?.click();
 
-    let cart: CartItem[] | undefined;
+    let cart: readonly CartItem[] | undefined;
     registry.on('cart.items', ({ data }) => (cart = data));
     await fixture.whenStable();
 
@@ -58,15 +61,18 @@ describe('CatalogWidget', () => {
     expect(text(byTestId(element, 'in-cart-lemonade'))).toBe('Im Warenkorb: 3');
   });
 
-  it('publishes catalog.product-selected when "Details" is clicked', async () => {
+  it('publishes catalog.product-selected when "Auswählen" is clicked', async () => {
     const selected = recordEvents(registry, 'catalog.product-selected');
 
     byTestId(element, 'select-croissant')?.click();
     await fixture.whenStable();
 
     expect(selected).toEqual([{ productId: 'croissant', name: 'Croissant' }]);
-    expect(byTestId(element, 'select-croissant')?.classList).toContain(
-      'details--active',
-    );
+    const croissant = byTestId(element, 'select-croissant');
+    expect(croissant?.classList).toContain('details--active');
+    expect(croissant?.getAttribute('aria-current')).toBe('true');
+    expect(
+      byTestId(element, 'select-espresso')?.hasAttribute('aria-current'),
+    ).toBe(false);
   });
 });

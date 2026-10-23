@@ -8,12 +8,14 @@
   --panel-accent: #4f46e5;
 }
 
+// The accent also colours the caption text, so these are the darker shades
+// of the brand colours (WCAG AA on white).
 :host([data-accent='mf1']) {
-  --panel-accent: #0284c7;
+  --panel-accent: #0369a1;
 }
 
 :host([data-accent='mf2']) {
-  --panel-accent: #ea580c;
+  --panel-accent: #c2410c;
 }
 
 .panel {

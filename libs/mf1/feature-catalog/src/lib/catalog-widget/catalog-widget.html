@@ -1,10 +1,11 @@
 <p class="hint">
-  „Details“ sendet <code>catalog.product-selected</code>, „In den Warenkorb“
+  „Auswählen“ sendet <code>catalog.product-selected</code>, „In den Warenkorb“
   aktualisiert <code>cart.items</code>.
 </p>
 
 <ul class="list">
   @for (product of products(); track product.id) {
+    @let selected = lastSelected()?.productId === product.id;
     <li>
       <mf1-product-card
         compact
@@ -15,11 +16,13 @@
         <button
           type="button"
           class="details"
-          [class.details--active]="lastSelected()?.productId === product.id"
+          [class.details--active]="selected"
+          [attr.aria-current]="selected ? 'true' : null"
+          [attr.aria-label]="'Auswählen: ' + product.name"
           [attr.data-testid]="'select-' + product.id"
           (click)="select(product)"
         >
-          Details
+          Auswählen
         </button>
       </mf1-product-card>
     </li>

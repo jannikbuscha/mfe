@@ -4,9 +4,6 @@
 }
 
 .header {
-  position: sticky;
-  top: 0;
-  z-index: 10;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -60,11 +57,12 @@
     outline: 2px solid #4f46e5;
     outline-offset: 2px;
   }
-}
 
-.nav__link--active {
-  background: #eef2ff;
-  color: #3730a3;
+  // Compound selector: as specific as :hover, and wins by coming later.
+  &.nav__link--active {
+    background: #eef2ff;
+    color: #3730a3;
+  }
 }
 
 .nav__origin {
@@ -109,7 +107,7 @@
   min-width: 1.5rem;
   padding: 0.05rem 0.4rem;
   border-radius: 999px;
-  background: #ea580c;
+  background: #c2410c;
   color: #fff;
   font-size: 0.8rem;
   font-weight: 600;
@@ -122,6 +120,15 @@
   .nav {
     order: 1;
     flex-basis: 100%;
+  }
+}
+
+// Below 600px the wrapped header would cover a fifth of the viewport.
+@media (min-width: 600px) {
+  .header {
+    position: sticky;
+    top: 0;
+    z-index: 10;
   }
 }
 

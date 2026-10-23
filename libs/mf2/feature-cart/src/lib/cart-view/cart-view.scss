@@ -1,5 +1,6 @@
 :host {
-  --mf2-accent: #ea580c;
+  // Darker than the #ea580c brand colour: white text on it needs 4.5:1 (AA).
+  --mf2-accent: #c2410c;
   display: block;
   color: #0f172a;
 }
@@ -9,7 +10,8 @@ button {
   cursor: pointer;
 }
 
-button:focus-visible {
+button:focus-visible,
+.summary:focus-visible {
   outline: 2px solid var(--mf2-accent);
   outline-offset: 2px;
 }
@@ -124,7 +126,7 @@ button:focus-visible {
   font-weight: 600;
 
   &:hover:not(:disabled) {
-    background: #c2410c;
+    background: #9a3412;
   }
 
   &:disabled {

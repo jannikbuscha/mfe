@@ -2,21 +2,26 @@ import { workspaceRoot } from '@nx/devkit';
 import { nxE2EPreset } from '@nx/playwright/preset';
 import { defineConfig, devices } from '@playwright/test';
 
+const isCI = !!process.env['CI'];
 const baseURL = process.env['BASE_URL'] || 'http://localhost:4200';
 
-// Locally, already running dev servers (`npm start`) are reused.
+// Locally, already running dev servers (`npm start`) are reused. CI builds
+// and serves the production artifacts (same ports), so the hashed federation
+// output is what gets tested.
 const server = {
   cwd: workspaceRoot,
-  reuseExistingServer: !process.env['CI'],
+  reuseExistingServer: !isCI,
   timeout: 300_000,
 };
+const serve = (app: string) =>
+  isCI ? `npx nx run ${app}:serve-static` : `npx nx run ${app}:serve`;
 
 /**
  * See https://playwright.dev/docs/test-configuration.
  *
  * The shell fetches the `remoteEntry.json` of both remotes (see
- * `federation.manifest.json`) on every page load, so all three dev servers
- * must be up before the first test runs.
+ * `federation.manifest.json`) on every page load, so all three servers must
+ * be up before the first test runs.
  */
 export default defineConfig({
   ...nxE2EPreset(import.meta.dirname, { testDir: './src' }),
@@ -27,17 +32,17 @@ export default defineConfig({
   webServer: [
     {
       ...server,
-      command: 'npx nx run mf1:serve',
+      command: serve('mf1'),
       url: 'http://localhost:4201/remoteEntry.json',
     },
     {
       ...server,
-      command: 'npx nx run mf2:serve',
+      command: serve('mf2'),
       url: 'http://localhost:4202/remoteEntry.json',
     },
     {
       ...server,
-      command: 'npx nx run shell:serve',
+      command: serve('shell'),
       url: 'http://localhost:4200',
     },
   ],

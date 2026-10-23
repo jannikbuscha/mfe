@@ -1,10 +1,15 @@
 import {
+  afterNextRender,
   booleanAttribute,
   Component,
   computed,
+  DOCUMENT,
+  ElementRef,
   inject,
+  Injector,
   input,
   linkedSignal,
+  viewChild,
 } from '@angular/core';
 import { CartStore } from '@mfe/shared/data-access-cart';
 import { EuroPipe } from '@mfe/shared/ui';
@@ -28,6 +33,11 @@ export class CartView {
 
   protected readonly cart = inject(CartStore);
 
+  private readonly document = inject(DOCUMENT);
+  private readonly injector = inject(Injector);
+  private readonly summary =
+    viewChild.required<ElementRef<HTMLElement>>('summary');
+
   // Resets when the cart switches between empty and filled: the confirmation
   // goes away as soon as anyone (e.g. MF1) starts the next order.
   private readonly lastOrder = linkedSignal<boolean, Order | undefined>({
@@ -45,21 +55,42 @@ export class CartView {
   }
 
   protected decrement(item: CartItem): void {
-    this.cart.decrement(item.productId);
+    this.keepFocus(() => this.cart.decrement(item.productId));
   }
 
   protected remove(item: CartItem): void {
-    this.cart.remove(item.productId);
+    this.keepFocus(() => this.cart.remove(item.productId));
   }
 
   protected checkout(): void {
-    const order = this.cart.checkout();
-    if (order) {
-      this.lastOrder.set(order);
-    }
+    this.keepFocus(() => {
+      const order = this.cart.checkout();
+      if (order) {
+        this.lastOrder.set(order);
+      }
+    });
   }
 
   protected dismissConfirmation(): void {
-    this.lastOrder.set(undefined);
+    this.keepFocus(() => this.lastOrder.set(undefined));
+  }
+
+  /**
+   * Runs `action`. If that removed or disabled the focused element (line gone,
+   * checkout disabled, confirmation closed), focus moves to the summary instead
+   * of falling back to `<body>`. The order confirmation is announced by its
+   * live region, so it does not need focus.
+   */
+  private keepFocus(action: () => void): void {
+    const focused = this.document.activeElement;
+    action();
+    afterNextRender(
+      () => {
+        if (focused && (!focused.isConnected || focused.matches(':disabled'))) {
+          this.summary().nativeElement.focus();
+        }
+      },
+      { injector: this.injector },
+    );
   }
 }
