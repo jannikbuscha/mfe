@@ -16,6 +16,7 @@ on:
 
 permissions:
   contents: read
+  pages: read # configure-pages (needed once the repository is private)
 
 concurrency:
   group: github-pages-${{ github.event_name == 'pull_request' && github.ref || 'deploy' }}

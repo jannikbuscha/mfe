@@ -8,15 +8,15 @@
 // The remotes live under /remotes/ so their folders do not collide with the
 // shell's own routes /mf1 and /mf2.
 //
-// Usage: node tools/github-pages/assemble.mjs [--base-path=/mfe] [--out=dist/github-pages]
-import { cp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+// Usage: node tools/github-pages/assemble.mjs [--base-path=/mfe]
+// (normally via `nx run shell:github-pages`, which builds the apps first)
+import { access, cp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { parseArgs } from 'node:util';
 
 const { values } = parseArgs({
   options: {
     'base-path': { type: 'string', default: '' },
-    out: { type: 'string', default: 'dist/github-pages' },
   },
 });
 
@@ -25,13 +25,21 @@ const basePath = `/${values['base-path'].replace(/^\/+|\/+$/g, '')}/`.replace(
   /^\/\/$/,
   '/',
 );
-const out = values.out;
+const out = 'dist/github-pages';
 const dist = (app) => join('dist/apps', app, 'browser');
 
 const manifest = JSON.parse(
   await readFile('apps/shell/public/federation.manifest.json', 'utf8'),
 );
 const remotes = Object.keys(manifest);
+
+for (const app of ['shell', ...remotes]) {
+  await access(join(dist(app), 'index.html')).catch(() => {
+    throw new Error(
+      `${dist(app)} is missing: build it first (nx run shell:github-pages builds every type:app project)`,
+    );
+  });
+}
 
 await rm(out, { recursive: true, force: true });
 await mkdir(out, { recursive: true });
@@ -62,7 +70,8 @@ await writeFile(
 await cp(join(out, 'index.html'), join(out, '404.html'));
 
 // Native Federation emits files starting with "_" (e.g. _angular_core.*.js),
-// which Jekyll would drop when the site is published from a branch.
+// which Jekyll would drop when the site is published from a branch. The
+// Actions deployment (upload-pages-artifact skips dotfiles) runs no Jekyll.
 await writeFile(join(out, '.nojekyll'), '');
 
 console.log(

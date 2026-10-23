@@ -125,7 +125,7 @@
       "dependsOn": [
         {
           "target": "build",
-          "projects": ["shell", "mf1", "mf2"]
+          "projects": ["tag:type:app"]
         }
       ],
       "options": {

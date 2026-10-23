@@ -17,7 +17,7 @@ Die Shell zeigt beide MFs
 
 **Live-Demo:** https://jannikbuscha.github.io/mfe/ (siehe [GitHub Pages](#github-pages))
 
-### Architektur
+## Architektur
 
 ```mermaid
 flowchart LR
@@ -30,7 +30,7 @@ flowchart LR
     subgraph shell["shell · Host :4200"]
       main["main.ts<br/>createRegistry() + initFederation()"]
       router["Router<br/>/mf1/… · /mf2/…"]
-      dashboard["Dashboard<br/>Widgets nebeneinander"]
+      dashboard["Dashboard<br/>Widgets nebeneinander + Event-Monitor"]
       header["Header<br/>Warenkorb-Badge"]
     end
 
@@ -53,9 +53,10 @@ flowchart LR
   router -->|"loadChildren"| mf2routes
   dashboard -->|"NgComponentOutlet"| mf1widget
   dashboard -->|"NgComponentOutlet"| mf2widget
-  mf1 <-->|"cart.items · catalog.product-selected"| registry
-  mf2 <-->|"cart.items · cart.checked-out · catalog.product-selected"| registry
-  header -->|"cart.items"| registry
+  registry <-->|"cart.items · catalog.product-selected"| mf1
+  registry <-->|"cart.items · cart.checked-out · catalog.product-selected"| mf2
+  header -->|"liest cart.items"| registry
+  dashboard -->|"liest alle Events (Monitor)"| registry
   shell -.- shared
   mf1 -.- shared
   mf2 -.- shared
@@ -128,6 +129,9 @@ libs/
     ui-catalog/             ProductCard
   mf2/
     feature-cart/           Warenkorb-Seite, Bestellungen, Widget
+tools/
+  github-pages/             assemble.mjs: baut aus den Production-Builds die Pages-Seite (dist/github-pages), aufgerufen von shell:github-pages
+.github/workflows/          ci.yml (Format, Lint, Test, Build, E2E), github-pages.yml (Deployment)
 ```
 
 ### Nx-Konventionen
@@ -148,7 +152,7 @@ Libraries folgen dem üblichen Nx-Schema `libs/<scope>/<type>[-<name>]` mit Tags
 
 (`shell-e2e` trägt `scope:shell, type:e2e` und importiert keine Libraries.)
 
-Abhängigkeiten der Projekte (vereinfacht, aus `npx nx graph`):
+Abhängigkeiten der Projekte (vereinfacht, aus `npx nx graph`; direkte `scope:shared`-Imports der Apps, z. B. `CartStore` für das Badge, sind weggelassen):
 
 ```mermaid
 flowchart TB
@@ -178,7 +182,8 @@ flowchart TB
     cartStore["data-access-cart"] --> bus["data-access-event-bus"] --> contract["util-event-registry"]
   end
 
-  shellApp --> dash
+  shellApp -. "lazy" .-> dash
+  shellApp -->|"Routen"| fed
   mf1App --> cat
   mf2App --> cartFeature
   scopeShell --> scopeShared
@@ -201,7 +206,7 @@ Damit kann MF1 technisch nicht auf Code von MF2 (oder der Shell) zugreifen. Geme
 ## Native Federation
 
 - Die Projekte wurden mit `nx g @angular-architects/native-federation:init` eingerichtet (Shell als `dynamic-host`, MFs als `remote`). Das Target `build`/`serve` nutzt den NF-Builder, das ursprüngliche Angular-Build liegt in `esbuild`/`serve-original`.
-- Die Shell lädt die Remotes zur Laufzeit aus `apps/shell/public/federation.manifest.json`. Die Datei landet ungehasht in `dist/apps/shell/browser/`; beim Deployment dort die Remote-URLs eintragen (oder relative URLs hinter einem Reverse Proxy nutzen). Liegen Remotes auf einer anderen Origin, müssen sie `remoteEntry.json` und ihre JS-Dateien mit `Access-Control-Allow-Origin` ausliefern (die NF-Dev-Server und `serve-static` tun das).
+- Die Shell lädt die Remotes zur Laufzeit aus `apps/shell/public/federation.manifest.json`. Die Datei landet ungehasht in `dist/apps/shell/browser/`; beim Deployment dort die Remote-URLs eintragen (oder relative URLs nutzen, wenn die Remotes auf derselben Origin liegen – so macht es das [GitHub-Pages-Deployment](#github-pages)). Liegen Remotes auf einer anderen Origin, müssen sie `remoteEntry.json` und ihre JS-Dateien mit `Access-Control-Allow-Origin` ausliefern (die NF-Dev-Server und `serve-static` tun das).
 - Remotes exponieren (siehe `apps/mf*/federation.config.mjs`):
   - `./Routes` → `src/app/remote-entry/entry.routes.ts` (`export default` Routes)
   - `./Widget` → `src/app/remote-entry/widget.ts` (`export default` Standalone-Component)
@@ -261,32 +266,38 @@ reachableRemotes('federation.manifest.json')
 Ablauf beim Start der Shell:
 
 ```mermaid
+%%{init: {'sequence': {'width': 110, 'actorMargin': 20}}}%%
 sequenceDiagram
   autonumber
-  participant B as Browser
   participant H as shell-Server
-  participant M as shell · main.ts
-  participant R as Event Registry
-  participant O as NF Orchestrator
+  participant M as main.ts
+  participant R as Registry
+  participant O as Orchestrator
   participant S as mf1 / mf2
-  participant A as shell · Angular
+  participant A as shell-App
 
-  B->>H: index.html, main.js
-  H-->>M: main.js läuft
-  M->>R: createRegistry() → window.__NF_REGISTRY__
-  M->>H: federation.manifest.json laden
-  M->>S: remoteEntry.json prüfen (Timeout 3 s)
-  Note over M,S: hängende oder fehlende Remotes werden ausgelassen
+  H->>M: index.html lädt main.js
+  M->>R: createRegistry()
+  Note right of R: window.__NF_REGISTRY__
+  M->>H: federation.manifest.json
+  M->>S: remoteEntry.json prüfen (3 s)
+  Note over M,S: hängende oder fehlende Remotes fallen weg
   M->>O: initFederation(erreichbare Remotes)
-  O->>S: remoteEntry.json laden
-  O-->>M: Import Map aktiv, Loader bereit
-  M->>R: register('orch.init-ready', loaders)
+  par
+    O->>H: ./remoteEntry.json der Shell
+  and
+    O->>S: remoteEntry.json der Remotes
+  end
+  O-->>M: Import Map aktiv
+  Note over O: geteilte Pakete (Angular, RxJS, @mfe/shared) aus der Shell
+  M->>R: register('orch.init-ready')
   M->>A: import('./bootstrap')
   A->>R: onReady('orch.init-ready')
-  R-->>A: Loader (sofort – Resource ist gelatcht)
+  R-->>A: Loader, sofort (Resource ist schon registriert)
   A->>O: loadRemoteModule('mf1', './Widget')
   O->>S: Widget-Chunk laden
-  S-->>A: Standalone-Component (nutzt das geteilte Angular)
+  S-->>A: Standalone-Component
+  Note over S,A: nutzt das geteilte Angular der Shell
 ```
 
 Die Shell lädt Remotes nicht über das (deprecated) globale `loadRemoteModule`, sondern holt sich die Loader per `onReady('orch.init-ready', …)` aus der Registry (`@mfe/shell/util-federation`). Da Resources „latchen“, gibt es kein Race mit `initFederation`.
@@ -305,38 +316,44 @@ Definiert in `libs/shared/util-event-registry/src/lib/contracts.ts` (alle Payloa
 Ablauf, wenn Nutzer:innen etwas in den Warenkorb legen, ein Produkt auswählen und bestellen:
 
 ```mermaid
+%%{init: {'sequence': {'width': 110, 'actorMargin': 20}}}%%
 sequenceDiagram
-  actor U as Nutzer
-  participant W1 as mf1 · Katalog
-  participant C as CartStore (shared)
-  participant R as Event Registry
-  participant W2 as mf2 · Warenkorb
-  participant SH as shell · Badge + Monitor
+  actor U as Nutzer:in
+  participant W1 as mf1
+  participant C as CartStore
+  participant R as Registry
+  participant W2 as mf2
+  participant SH as shell
 
   U->>W1: „In den Warenkorb“
   W1->>C: add(product)
-  C->>R: update('cart.items', reducer)
-  R-->>C: on('cart.items') → Signal items()
-  par alle Consumer synchron
+  C->>R: update('cart.items')
+  R-->>C: on('cart.items')
+  par alle Consumer, synchron
     C-->>W1: „Im Warenkorb: 1“
-    C-->>W2: Warenkorb-Zeile + Summe
-    C-->>SH: Badge itemCount()
-    R-->>SH: history('cart.items') → Event-Monitor
+    C-->>W2: Zeile + Summe
+    C-->>SH: Badge
+    R-->>SH: Monitor
   end
 
   U->>W1: „Auswählen“
   W1->>R: emit('catalog.product-selected')
-  R-->>W2: state() → „Zuletzt angesehen“
+  par alle Consumer
+    R-->>W1: aktiver Button
+    R-->>W2: „Zuletzt angesehen“
+    R-->>SH: Monitor
+  end
 
   U->>W2: „Bestellen“
   W2->>C: checkout()
-  C->>R: emit('cart.checked-out', order)
+  C->>R: emit('cart.checked-out')
   C->>R: update('cart.items', leer)
 
   U->>SH: Navigation /mf2/orders
   SH->>W2: mf2 ./Routes → OrdersPage
-  W2->>R: history('cart.checked-out', limit 20)
-  R-->>W2: Backfill per Microtask-Replay + Live-Events
+  W2->>R: on('cart.checked-out', replay 20)
+  R-->>W2: Backfill + Live-Events
+  Note over W1,SH: Widgets lesen per EventBus.state() (replay 1), Monitor und Bestellungen per EventBus.history() (replay 20)
 ```
 
 So zeigt sich das Verhalten der Registry in der Demo:
@@ -368,37 +385,40 @@ Abos enden automatisch mit der Komponente/dem Service (`DestroyRef`). Die Regist
 Der Workflow `.github/workflows/github-pages.yml` veröffentlicht Shell und Remotes als **eine** statische Seite unter https://jannikbuscha.github.io/mfe/:
 
 ```mermaid
-flowchart LR
+flowchart TB
   push["Push auf main"] --> workflow["GitHub Actions<br/>.github/workflows/github-pages.yml"]
-  workflow --> build["nx run shell:github-pages<br/>baut shell, mf1, mf2 (production)"]
+  workflow --> build["nx run shell:github-pages<br/>baut alle type:app-Projekte (production)"]
   build --> assemble["tools/github-pages/assemble.mjs<br/>base href, Manifest, 404.html"]
   assemble --> deploy["actions/deploy-pages"]
+  deploy --> site
 
-  subgraph site["https://jannikbuscha.github.io/mfe/"]
+  subgraph site["GitHub Pages: jannikbuscha.github.io/mfe/"]
+    direction TB
     root["/ → shell<br/>404.html → shell (Deep Links)"]
+    manifest["federation.manifest.json<br/>./remotes/mf1|mf2/remoteEntry.json"]
     r1["/remotes/mf1/ → mf1"]
     r2["/remotes/mf2/ → mf2"]
-    manifest["federation.manifest.json<br/>./remotes/mf1|mf2/remoteEntry.json"]
   end
-
-  deploy --> site
 ```
 
-- `nx run shell:github-pages --base-path=/mfe` baut alle drei Apps (production) und ruft `tools/github-pages/assemble.mjs` auf. Das Skript setzt die `<base href>`, schreibt ein Manifest mit relativen URLs (`./remotes/mf1/remoteEntry.json`), kopiert `index.html` nach `404.html` (Deep Links wie `/mfe/mf1/espresso`) und legt die Remotes unter `/remotes/` ab, damit sie nicht mit den Shell-Routen `/mf1` und `/mf2` kollidieren.
-- Die Remotes sind dort auch standalone erreichbar: https://jannikbuscha.github.io/mfe/remotes/mf1/ und https://jannikbuscha.github.io/mfe/remotes/mf2/ (Deep Links funktionieren auf Pages nur für die Shell).
+- `nx run shell:github-pages --base-path=/mfe` baut alle `type:app`-Projekte (production) und ruft `tools/github-pages/assemble.mjs` auf. Das Skript setzt die `<base href>` von Shell und Remotes, schreibt ein Manifest mit relativen URLs (`./remotes/mf1/remoteEntry.json`), legt die Remotes unter `remotes/` ab, damit sie nicht mit den Shell-Routen `/mf1` und `/mf2` kollidieren, und kopiert `index.html` nach `404.html`, damit Deep Links wie `/mfe/mf1/espresso` auch beim Neuladen funktionieren.
+- Die Remotes sind dort auch standalone erreichbar: https://jannikbuscha.github.io/mfe/remotes/mf1/ und https://jannikbuscha.github.io/mfe/remotes/mf2/ (Deep Links funktionieren auf Pages nur für die Shell: ein Neuladen von z. B. `/mfe/remotes/mf1/espresso` landet über `404.html` im Shell-Dashboard).
 - Pull Requests bauen die Seite nur; deployt wird bei jedem Push auf `main` (oder manuell per „Run workflow“).
-- Einmalig im Repository einstellen: **Settings → Pages → Source: GitHub Actions**.
+- Einmalig im Repository einstellen, mit `main` als Default-Branch: **Settings → Pages → Build and deployment → Source: GitHub Actions**. Die dabei angelegte Umgebung `github-pages` lässt nur Deployments vom Default-Branch zu (anpassbar unter **Settings → Environments → github-pages**). Wurde vorher schon auf `main` gepusht, den Workflow einmal per „Run workflow“ starten.
 
-Lokal ausprobieren:
+Lokal ausprobieren (ohne `--base-path` liegt die Seite unter `/`; `http-server` beantwortet unbekannte Pfade wie Pages mit `404.html`):
 
 ```bash
-npx nx run shell:github-pages --base-path=/mfe   # → dist/github-pages
+npx nx run shell:github-pages                    # → dist/github-pages
+npx http-server dist/github-pages -p 8080 -c-1   # → http://localhost:8080
 ```
+
+`--base-path=/mfe` erzeugt exakt das Pages-Artefakt (`<base href="/mfe/">`); das funktioniert nur, wenn es unter `/mfe/` ausgeliefert wird.
 
 ## Ein weiteres Remote hinzufügen
 
 1. `npx nx g @nx/angular:application --directory=apps/mf3 --name=mf3 --prefix=mf3 --bundler=esbuild --style=scss --e2eTestRunner=none --tags=scope:mf3,type:app`
 2. `npx nx g @angular-architects/native-federation:init --project=mf3 --port=4203 --type=remote`
 3. `main.ts`, `federation.config.mjs` und `project.json` wie bei `mf1` anpassen (Registry, `./Routes`, `./Widget`, `sharedMappings`, `skip`, `continuous`/`inputs` der NF-Targets, `buildTarget` des `test`-Targets).
-4. Shell: Eintrag in `apps/shell/public/federation.manifest.json`, `RemoteName` in `@mfe/shell/util-federation` erweitern, Route in `apps/shell/src/app/app.routes.ts` und Navigation ergänzen, für das Dashboard ein `<ui-panel>` mit `<shell-remote-widget remote="mf3" />` in `libs/shell/feature-dashboard/src/lib/dashboard/dashboard.html` (ggf. `PanelAccent` erweitern).
-5. `scope:mf3`-Regel in `eslint.config.mjs` ergänzen, ggf. neue Events in `contracts.ts` definieren und einen `webServer`-Eintrag in `apps/shell-e2e/playwright.config.mts` hinzufügen.
+4. Shell: Eintrag in `apps/shell/public/federation.manifest.json`, `RemoteName` in `@mfe/shell/util-federation` erweitern, Route in `apps/shell/src/app/app.routes.ts` und Navigation ergänzen, für das Dashboard ein `<ui-panel>` mit `<shell-remote-widget remote="mf3" />` in `libs/shell/feature-dashboard/src/lib/dashboard/dashboard.html` (ggf. `PanelAccent` erweitern). Für GitHub Pages reicht der Manifest-Eintrag: `shell:github-pages` baut alle `type:app`-Projekte und übernimmt jedes Remote aus dem Manifest.
+5. `scope:mf3`-Regel in `eslint.config.mjs` ergänzen, ggf. neue Events in `contracts.ts` definieren, einen `webServer`-Eintrag in `apps/shell-e2e/playwright.config.mts` hinzufügen und `mf3` in die `implicitDependencies` von `apps/shell-e2e/project.json` aufnehmen.
