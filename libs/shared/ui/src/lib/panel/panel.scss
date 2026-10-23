@@ -1,0 +1,53 @@
+:host {
+  --panel-accent: #64748b;
+  display: block;
+  min-width: 0;
+}
+
+:host([data-accent='shell']) {
+  --panel-accent: #4f46e5;
+}
+
+:host([data-accent='mf1']) {
+  --panel-accent: #0284c7;
+}
+
+:host([data-accent='mf2']) {
+  --panel-accent: #ea580c;
+}
+
+.panel {
+  height: 100%;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-top: 4px solid var(--panel-accent);
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgb(15 23 42 / 8%);
+  overflow: hidden;
+}
+
+.panel__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.25rem 0.75rem;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.panel__heading {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #0f172a;
+}
+
+.panel__caption {
+  margin: 0.25rem 0 0;
+  font-size: 0.8rem;
+  color: var(--panel-accent);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.panel__body {
+  padding: 1rem 1.25rem 1.25rem;
+}

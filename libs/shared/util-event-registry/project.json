@@ -1,0 +1,10 @@
+{
+  "name": "shared-util-event-registry",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/shared/util-event-registry/src",
+  "prefix": "mfe",
+  "projectType": "library",
+  "tags": ["scope:shared", "type:util"],
+  "// targets": "to see all targets run: nx show project shared-util-event-registry --web",
+  "targets": {}
+}

@@ -1,0 +1,10 @@
+{
+  "name": "mf1-ui-catalog",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/mf1/ui-catalog/src",
+  "prefix": "mf1",
+  "projectType": "library",
+  "tags": ["scope:mf1", "type:ui"],
+  "// targets": "to see all targets run: nx show project mf1-ui-catalog --web",
+  "targets": {}
+}

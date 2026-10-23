@@ -1,0 +1,10 @@
+{
+  "name": "shared-data-access-cart",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/shared/data-access-cart/src",
+  "prefix": "mfe",
+  "projectType": "library",
+  "tags": ["scope:shared", "type:data-access"],
+  "// targets": "to see all targets run: nx show project shared-data-access-cart --web",
+  "targets": {}
+}
