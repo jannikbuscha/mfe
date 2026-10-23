@@ -10,7 +10,7 @@
       "executor": "@angular-architects/native-federation:build",
       "outputs": ["{workspaceRoot}/dist/apps/mf2"],
       "cache": true,
-      "inputs": ["production", "^production"],
+      "inputs": ["production", "^production", "federationShared"],
       "defaultConfiguration": "production",
       "options": {
         "cacheExternalArtifacts": true,

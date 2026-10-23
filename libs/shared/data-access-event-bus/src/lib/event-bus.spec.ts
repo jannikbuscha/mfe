@@ -61,22 +61,85 @@ describe('EventBus', () => {
     expect(selected().map((e) => e.data.productId)).toEqual(['3', '4']);
   });
 
-  it('history() does not duplicate events emitted before the replay ran', async () => {
-    bus.emit('catalog.product-selected', { productId: '1', name: '1' });
+  describe('when events are emitted before the replay microtask ran', () => {
+    // All events in one millisecond, the usual case for synchronous code.
+    beforeEach(() => vi.spyOn(Date, 'now').mockReturnValue(1_000));
+    afterEach(() => vi.restoreAllMocks());
 
-    const selected = bus.history('catalog.product-selected', {
-      limit: 5,
-      injector,
+    const select = (productId: string) =>
+      bus.emit('catalog.product-selected', { productId, name: productId });
+    const ids = (events: readonly { data: { productId: string } }[]) =>
+      events.map((e) => e.data.productId);
+
+    it('history() keeps order and does not duplicate them', async () => {
+      select('1');
+      const selected = bus.history('catalog.product-selected', {
+        limit: 5,
+        injector,
+      });
+      // Delivered live right away and again at the end of the backfill.
+      select('2');
+      await flushReplay();
+      select('3');
+
+      expect(ids(selected())).toEqual(['1', '2', '3']);
     });
-    // Delivered live right away and again by the (microtask) replay.
-    bus.emit('catalog.product-selected', { productId: '2', name: '2' });
-    await flushReplay();
 
-    expect(selected().map((e) => e.data.productId)).toEqual(['1', '2']);
+    it('history() keeps identical events that really happened twice', async () => {
+      select('x');
+      select('x');
+      const selected = bus.history('catalog.product-selected', {
+        limit: 5,
+        injector,
+      });
+      select('x');
+      await flushReplay();
+
+      expect(ids(selected())).toEqual(['x', 'x', 'x']);
+    });
+
+    it('history() merges correctly when the registry trims its history', async () => {
+      // maxEvents 10: the 11th event makes the registry start a new array,
+      // so the backfill only contains the first of the two live events.
+      for (let i = 1; i <= 10; i++) select(`old${i}`);
+      const selected = bus.history('catalog.product-selected', {
+        limit: 4,
+        injector,
+      });
+      select('new1');
+      select('new2');
+      await flushReplay();
+
+      expect(ids(selected())).toEqual(['old9', 'old10', 'new1', 'new2']);
+    });
+
+    it('history() takes live events when the stream had no history yet', async () => {
+      const selected = bus.history('catalog.product-selected', {
+        limit: 5,
+        injector,
+      });
+      select('1');
+      select('2');
+      await flushReplay();
+
+      expect(ids(selected())).toEqual(['1', '2']);
+    });
+
+    it('state() ends on the newest value even across a history trim', async () => {
+      for (let i = 1; i <= 10; i++) {
+        bus.update('cart.items', () => [item(`old${i}`)]);
+      }
+      const cart = bus.state('cart.items', { injector });
+      bus.update('cart.items', () => [item('a')]);
+      bus.update('cart.items', () => [item('b')]);
+      await flushReplay();
+
+      expect(cart()).toEqual([item('b')]);
+    });
   });
 
   it('state() throws outside an injection context without an injector', () => {
-    expect(() => bus.state('cart.items')).toThrow();
+    expect(() => bus.state('cart.items')).toThrow(/NG0203/);
   });
 
   it('unsubscribes when the owning injector is destroyed', async () => {
@@ -88,13 +151,6 @@ describe('EventBus', () => {
     bus.update('cart.items', () => [item('late')]);
 
     expect(cart()).toBeUndefined();
-  });
-
-  it('whenReady() resolves registered resources', async () => {
-    const result = { loadRemoteModule: vi.fn() };
-    void registry.register('orch.init-ready', result as never);
-
-    await expect(bus.whenReady('orch.init-ready')).resolves.toBe(result);
   });
 
   it('on$() emits live events and stops on unsubscribe', () => {

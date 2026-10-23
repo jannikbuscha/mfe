@@ -10,7 +10,7 @@
       "executor": "@angular-architects/native-federation:build",
       "outputs": ["{workspaceRoot}/dist/apps/shell"],
       "cache": true,
-      "inputs": ["production", "^production"],
+      "inputs": ["production", "^production", "federationShared"],
       "options": {
         "cacheExternalArtifacts": true,
         "tsConfig": "apps/shell/tsconfig.federation.json"

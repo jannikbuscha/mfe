@@ -14,8 +14,6 @@ import {
   MfeEventRegistry,
   MfeEvents,
   MfeEventType,
-  MfeResources,
-  MfeResourceType,
   ReplayOptions,
 } from '@mfe/shared/util-event-registry';
 import { Observable } from 'rxjs';
@@ -70,46 +68,76 @@ export class EventBus {
   ): Signal<MfeEvents[K] | undefined> {
     const destroyRef = resolveDestroyRef(this.state, options);
     const value = signal<MfeEvents[K] | undefined>(undefined);
-    const unsubscribe = this.registry.on(type, ({ data }) => value.set(data), {
-      replay: 1,
+    let receivedLive = false;
+    const stopLive = this.registry.on(
+      type,
+      ({ data }) => {
+        receivedLive = true;
+        value.set(data);
+      },
+      { replay: 0 },
+    );
+    // The registry replays in a microtask. A live event delivered before that
+    // is newer than the replayed value, which then must not overwrite it.
+    const stopReplay = this.registry.on(
+      type,
+      ({ data }) => {
+        if (!receivedLive) {
+          value.set(data);
+        }
+      },
+      { replay: 1 },
+    );
+    queueMicrotask(stopReplay);
+    destroyRef.onDestroy(() => {
+      stopLive();
+      stopReplay();
     });
-    destroyRef.onDestroy(unsubscribe);
     return value.asReadonly();
   }
 
-  /** The last `limit` events of a stream (oldest first), kept up to date. */
+  /**
+   * The last `limit` events of a stream (oldest first), kept up to date.
+   * Events published before the subscription are backfilled from the
+   * registry's history, which keeps at most `maxEvents` per stream.
+   */
   history<K extends MfeEventType>(
     type: K,
     options: HistoryOptions,
   ): Signal<readonly NFEventData<MfeEvents[K]>[]> {
+    type Event = NFEventData<MfeEvents[K]>;
     const destroyRef = resolveDestroyRef(this.history, options);
     const { limit } = options;
-    const events = signal<readonly NFEventData<MfeEvents[K]>[]>([]);
-    // The registry replays in a microtask. An event emitted before that
-    // microtask runs arrives live first and then again with the replay, so
-    // until the replay is through, drop copies and restore chronological order.
-    let replayWindow: Set<string> | undefined = new Set();
+    const events = signal<readonly Event[]>([]);
+
+    // The registry delivers the backfill in a microtask. Events emitted before
+    // it runs arrive live first and then again at the end of the backfill, so
+    // both are collected separately and merged once the backfill is through.
+    let pending: { live: Event[]; backfill?: Event[] } | undefined = {
+      live: [],
+    };
+    // Queued before `on()`, so it runs right before the registry's replay.
+    queueMicrotask(() => pending && (pending.backfill = []));
     const unsubscribe = this.registry.on(
       type,
       (event) => {
-        if (!replayWindow) {
+        if (pending) {
+          (pending.backfill ?? pending.live).push(event);
+        } else {
           events.update((list) => [...list, event].slice(-limit));
-          return;
-        }
-        const key = `${event.timestamp}:${JSON.stringify(event.data)}`;
-        if (!replayWindow.has(key)) {
-          replayWindow.add(key);
-          events.update((list) =>
-            [...list, event]
-              .sort((a, b) => a.timestamp - b.timestamp)
-              .slice(-limit),
-          );
         }
       },
       { replay: limit },
     );
-    // Queued after the registry's replay microtask, so it runs once that is done.
-    queueMicrotask(() => (replayWindow = undefined));
+    // Queued after `on()`, so it runs right after the registry's replay.
+    queueMicrotask(() => {
+      if (pending) {
+        const { backfill = [], live } = pending;
+        pending = undefined;
+        events.set(mergeBackfill(backfill, live).slice(-limit));
+      }
+    });
+
     destroyRef.onDestroy(unsubscribe);
     return events.asReadonly();
   }
@@ -123,11 +151,36 @@ export class EventBus {
       this.registry.on(type, (event) => subscriber.next(event), options),
     );
   }
+}
 
-  /** Resolves once the resource is registered, immediately if it already is. */
-  whenReady<K extends MfeResourceType>(type: K): Promise<MfeResources[K]> {
-    return new Promise((resolve) => this.registry.onReady(type, resolve));
+/**
+ * The backfill is the registry's history, oldest first. Live events that the
+ * registry had already stored when it ran the backfill are also its last
+ * entries: find that overlap and append only the live events after it.
+ */
+function mergeBackfill<T>(
+  backfill: readonly NFEventData<T>[],
+  live: readonly NFEventData<T>[],
+): NFEventData<T>[] {
+  if (backfill.length === 0) {
+    return [...live];
   }
+  for (let end = live.length; end > 0; end--) {
+    const overlap = Math.min(end, backfill.length);
+    const tail = backfill.slice(backfill.length - overlap);
+    if (tail.every((event, i) => sameEvent(event, live[end - overlap + i]))) {
+      return [...backfill, ...live.slice(end)];
+    }
+  }
+  return [...backfill, ...live];
+}
+
+/** Replayed events are structured clones, so compare by value. */
+function sameEvent<T>(a: NFEventData<T>, b: NFEventData<T>): boolean {
+  return (
+    a.timestamp === b.timestamp &&
+    JSON.stringify(a.data) === JSON.stringify(b.data)
+  );
 }
 
 function resolveDestroyRef(

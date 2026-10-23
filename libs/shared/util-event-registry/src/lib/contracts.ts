@@ -7,25 +7,27 @@ import type { NativeFederationResult } from '@softarc/native-federation-orchestr
  *
  * Every payload must be structured-clone-able (no functions, class instances
  * or DOM nodes): the registry clones values for `update()` and for replay.
+ * Live events, however, reach every subscriber in every micro frontend as the
+ * same object, hence the read-only types: never mutate a payload in place.
  */
 
 export interface CartItem {
-  productId: string;
-  name: string;
-  price: number;
-  quantity: number;
+  readonly productId: string;
+  readonly name: string;
+  readonly price: number;
+  readonly quantity: number;
 }
 
 export interface Order {
-  orderId: string;
-  items: CartItem[];
-  total: number;
-  placedAt: number;
+  readonly orderId: string;
+  readonly items: readonly CartItem[];
+  readonly total: number;
+  readonly placedAt: number;
 }
 
 export interface ProductSelected {
-  productId: string;
-  name: string;
+  readonly productId: string;
+  readonly name: string;
 }
 
 /** Event streams, delivered through `emit` / `update` / `on`. */
@@ -35,10 +37,13 @@ export interface MfeEvents {
    * `update()`, read with the default `replay: 1`, so a late-joining
    * subscriber immediately sees the current cart.
    */
-  'cart.items': CartItem[];
+  'cart.items': readonly CartItem[];
   /** Event log: an order was placed. Read with `replay: N` for a history. */
   'cart.checked-out': Order;
-  /** Event log: a product was opened in the catalog (MF1). */
+  /**
+   * Event from MF1: a product was opened or selected. The widgets read the
+   * latest one (`replay: 1`), the shell's event monitor a history (`replay: N`).
+   */
   'catalog.product-selected': ProductSelected;
 }
 

@@ -1,4 +1,4 @@
-import { computed, inject, Injectable, Injector } from '@angular/core';
+import { computed, inject, Injectable } from '@angular/core';
 import { EventBus } from '@mfe/shared/data-access-event-bus';
 import type { CartItem, Order } from '@mfe/shared/util-event-registry';
 
@@ -6,17 +6,16 @@ export type CartProduct = Omit<CartItem, 'quantity'>;
 
 /**
  * The cart lives in the `cart.items` state channel of the event registry, not
- * in this service. Every micro frontend can create its own `CartStore` and
- * still see the same cart; mutations go through `update()` so they always
- * start from the latest value published by anyone.
+ * in this service. Inside the shell all micro frontends share one instance
+ * (this library is a shared singleton); a remote served standalone has its
+ * own. Mutations go through `update()`, so they always start from the latest
+ * value published by anyone.
  */
 @Injectable({ providedIn: 'root' })
 export class CartStore {
   private readonly bus = inject(EventBus);
 
-  private readonly state = this.bus.state('cart.items', {
-    injector: inject(Injector),
-  });
+  private readonly state = this.bus.state('cart.items');
 
   readonly items = computed(() => this.state() ?? []);
   readonly itemCount = computed(() =>
